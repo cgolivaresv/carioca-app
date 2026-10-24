@@ -82,7 +82,7 @@ function plate(p){const tm=p==0&&TURN>0&&G.turnStart&&inTurn(),el=G.showScore&&G
 function peek(){G.peek=1;G.showScore=0;render()}
 function render(){
  const h=G.hands[0],tot=tots(),end=G.phase=='roundEnd',fin=end&&G.round==9,top=G.vis?G.vis.top:G.disc[G.disc.length-1],can=G.phase=='draw',mine=me();
- const W=typeof innerWidth=='number'?innerWidth:400,avail=Math.min(W,560)-30,n=h.length,ov=n>1?Math.max(0,Math.round((n*52-avail)/(n-1))):0;
+ const W=typeof innerWidth=='number'?innerWidth:400,avail=Math.min(W,560)-30,n=h.length,cw=W<=390?44:52,ov=n>1?Math.min(cw-14,Math.max(0,Math.round((n*cw-avail)/(n-1)))):0;
  const hint=G.round>7?' · '+['A–K, cualquier palo, con comodines','A–K de un solo palo, sin comodines'][G.round-8]:'';
  const t=`<table><tr><th>#</th><th>Contrato</th>${NM.map(x=>`<th>${x}</th>`).join('')}</tr>`+G.scores.map((r,i)=>`<tr><td>${i+1}</td><td>${desc(CON[i])}</td>${r.map(x=>`<td>${x}</td>`).join('')}</tr>`).join('')+`<tfoot><tr><td></td><td>Total</td>${tot.map(x=>`<td>${x}</td>`).join('')}</tr></tfoot></table>`;
  const btn=(c,f,l,on)=>`<button class="act ${c}" ${on?'':'disabled'} onclick="${f}()">${l}</button>`;
@@ -126,4 +126,5 @@ function statsBox(){const s=loadStats();return `<div class="box"><b>Estadística
 Object.assign(window,{sel,take,armar,deshacer,bajar,pegar,elegir,descartar,next,ordenar,cancelar,render,toggleScore,peek,setThink,setTurn});
 if(restore()&&confirm('Hay una partida guardada. ¿Quieres continuarla?')){startTurn();render()}
 else{G={round:0,scores:[],sort:true,log:[]};start()}
+let rz=0;addEventListener('resize',()=>{clearTimeout(rz);rz=setTimeout(()=>{if(G.hands&&!G.showScore)render()},150)});
 if(navigator.serviceWorker)window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js'));
