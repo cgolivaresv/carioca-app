@@ -538,3 +538,10 @@ body{-webkit-text-size-adjust:100%;-webkit-user-select:none;user-select:none}
 /* el contenedor del selector necesita un ancho definido para que las tarjetas no se colapsen */
 .menu .who{width:100%;max-width:330px}
 .menu .who .picks{width:100%}
+
+/* vertical: avatares más grandes; la placa tapa un poco la parte baja de la figura para no gastar altura */
+@media (orientation:portrait),(max-width:639px){
+ :root{--avh:clamp(50px,10.4vh,124px)}
+ .plate{margin-top:calc(var(--avh) * -.22)}
+ .av img.avimg{max-width:calc(var(--avh) * 1.5)}
+}
