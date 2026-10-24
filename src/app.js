@@ -70,7 +70,7 @@ function flyEl(){const f=G.fly,st=`--dx:${f.p==1?-110:110}px;--sx:${f.src=='disc
  return f.src=='disc'?card(f.card,'sm fly face').replace('<button','<button style="'+st+'"'):`<i class="fly" style="${st}"></i>`}
 function toast(){const n=G.note,nm=NM[n.p];
  return `<div class="toast">${n.kind=='deck'?`<i class="mini"></i><span>${nm} robó una carta del <b>mazo</b></span>`:n.kind=='disc'?`${small(n.card)}<span>${nm} tomó del <b>descarte</b></span>`:`<span>✅ ${nm} se <b>bajó</b></span>`}</div>`}
-let TURN=(()=>{try{const v=localStorage.getItem('carioca:turn');return +v>0?+v:20000}catch(e){return 20000}})(),tt=0;
+let TURN=(()=>{try{const v=localStorage.getItem('carioca:turn');return v==null?0:Math.max(0,+v||0)}catch(e){return 0}})(),tt=0;
 const inTurn=()=>G.phase=='draw'||G.phase=='play';
 function startTurn(){clearTimeout(tt);if(TURN>0&&inTurn()){G.turnStart=Date.now();tt=setTimeout(timeUp,TURN)}else G.turnStart=null}
 function stopTurn(){clearTimeout(tt);G.turnStart=null}
@@ -82,7 +82,7 @@ function timeUp(){if(!inTurn()||G.showScore)return;
  if(!w||(!w.r&&h.length>1))w=[...h].filter(c=>c.r).sort((x,y)=>pts(y.r)-pts(x.r))[0]||h[0];
  G.choose=null;G.sel=new Set([w.id]);G.msg='⏰ Se acabó tu tiempo: jugada automática.';descartar()}
 function setTurn(s){TURN=s*1000;try{localStorage.setItem('carioca:turn',TURN)}catch(e){}if(G.showScore)G.left=TURN||null;else startTurn();render()}
-const turnChips=()=>`<div class="row" style="margin-top:8px"><span class="chip2">Tu tiempo por turno:</span>${[[15,'15 s'],[20,'20 s'],[30,'30 s'],[45,'45 s']].map(([s,l])=>`<button class="chip ${TURN==s*1000?'on':''}" onclick="setTurn(${s})">${l}</button>`).join('')}</div>`;
+const turnChips=()=>`<div class="row" style="margin-top:8px"><span class="chip2">Tu tiempo por turno:</span>${[[0,'Sin límite'],[20,'20 s'],[30,'30 s'],[45,'45 s']].map(([s,l])=>`<button class="chip ${TURN==s*1000?'on':''}" onclick="setTurn(${s})">${l}</button>`).join('')}</div>`;
 function toggleScore(){G.showScore=!G.showScore;
  if(inTurn()){if(G.showScore){clearTimeout(tt);G.left=G.turnStart?Math.max(0,TURN-(Date.now()-G.turnStart)):null}
   else if(TURN>0){const l=G.left??TURN;G.turnStart=Date.now()-(TURN-l);tt=setTimeout(timeUp,l)}else G.turnStart=null}
