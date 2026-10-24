@@ -267,7 +267,7 @@ body{background:linear-gradient(180deg,rgba(0,0,0,0) 56%,rgba(74,44,24,.9) 100%)
 .seat .bubble::before{content:"";position:absolute;left:50%;top:-5px;margin-left:-5px;border:5px solid transparent;border-top:0;border-bottom-color:#fffaf0}
 .seat .bubble.talk::after{display:none}
 @keyframes bpop{from{opacity:0;transform:translateX(-50%) scale(.6)}}
-.hero{margin-top:-58px}
+.hero{margin-top:-40px}
 /* manos bajadas sobre el fieltro */
 .table .m{border:0;background:none;box-shadow:none;filter:drop-shadow(0 2px 3px rgba(0,0,0,.5))}
 .table .m.st{outline:2px solid #ffd640;outline-offset:2px;border-radius:6px}
@@ -283,8 +283,8 @@ body{background:linear-gradient(180deg,rgba(0,0,0,0) 56%,rgba(74,44,24,.9) 100%)
 /* alturas bajas */
 @media(max-height:760px){
  .av{width:62px;height:62px}.plate{margin-top:-6px;padding:10px 10px 5px;min-width:112px}
- .table{padding:8px 10px 40px}.hero{margin-top:-42px}
+ .table{padding:8px 10px 40px}.hero{margin-top:-32px}
  .seat .bubble,.seat .bubble.talk{font-size:10.5px;padding:5px 8px;max-width:150px;margin-top:6px}
 }
 @media(max-height:720px){.tray{display:none}}
-@media(max-height:620px){.av{width:50px;height:50px}.plate{margin-top:-5px;padding:8px 8px 4px}.hero{margin-top:-34px}.table{padding-bottom:34px}}
+@media(max-height:620px){.av{width:50px;height:50px}.plate{margin-top:-5px;padding:8px 8px 4px}.hero{margin-top:-26px}.table{padding-bottom:34px}}
