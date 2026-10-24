@@ -30,7 +30,7 @@ export function attachAll(ms,h){let ch=true;while(ch&&h.length){ch=false;
  for(const c of [...h].sort((a,b)=>!a.r-!b.r)){for(const m of ms){const s=sides(m,c);if(s.length){put(m,c,c.r?s[0]:s[Math.random()*s.length|0]);h=rm(h,[c]);ch=true;break}}if(ch)break}}return h}
 export function deckDraw(S){if(!S.deck.length){const t=S.disc.pop();S.deck=shuf(S.disc);S.disc=[t];S.reshuf=(S.reshuf||0)+1}return S.deck.pop()}
 function seenOf(S,h){const c=new Array(56).fill(0);for(const x of [...S.disc,...S.melds.flat().flatMap(m=>m.cs),...h])if(x.r)c[x.s*14+x.r]++;return c}
-function wantTop(x,h,top){if(!top)return false;
+function wantTop(x,h,top){if(!top)return false;if(x.st.err&&Math.random()<x.st.err)return false;
  if(x.down)return x.S.melds.flat().some(m=>sides(m,top).length);
  const v0=value(h,x.req,x.hid),v1=value([...h,top],x.req,x.hid);
  if(v1-v0>=95)return true;
@@ -40,6 +40,7 @@ function pickDiscard(x,h){
  if(x.down){const all=x.S.melds.flat(),free=h.filter(c=>c.r&&!all.some(m=>sides(m,c).length)),pool=free.length?free:h.some(c=>c.r)?h.filter(c=>c.r):h;return pool.map(c=>[c,pts(c.r)+Math.random()*.9]).reduce((b,e)=>e[1]>b[1]?e:b)[0]}
  let best=h[0],bs=-1e9;for(const c of h){if(!c.r&&h.length>1)continue;
   const v=value(rm(h,[c]),x.req,x.hid)-x.st.danger*danger(x,c)+pts(c.r)*.05+Math.random()*.9;if(v>bs){bs=v;best=c}}return best}
+function randomDiscard(h){const n=h.filter(c=>c.r),p=n.length?n:h;return p[Math.random()*p.length|0]}
 // Juega el turno completo del bot p sobre el estado S (misma lógica en la app y en la simulación)
 export function botPlay(S,p,log=()=>{},st=STYLES[p]||STYLES[1]){
  let h=S.hands[p],lay=0;const req=[...CON[S.round]].sort((a,b)=>b-a),seen=seenOf(S,h);
@@ -47,8 +48,8 @@ export function botPlay(S,p,log=()=>{},st=STYLES[p]||STYLES[1]){
  let drew='deck',dc=null;
  if(wantTop(x,h,top)){drew='disc';dc=top;S.taken[p].push(top);h.push(S.disc.pop());log(p,'toma del descarte')}
  else{const c=deckDraw(S);if(!c)return{out:false};h.push(c);log(p,'roba del mazo')}
- if(!x.down){const sol=planLay(x,h);if(sol){S.melds[p]=sol.map(m=>classify(m,m.st0));sol.forEach(m=>h=rm(h,m));S.down[p]=1;x.down=true;lay=1;log(p,'se baja')}}
+ if(!x.down){const sol=planLay(x,h);if(sol&&!(st.lazy&&Math.random()<st.lazy)){S.melds[p]=sol.map(m=>classify(m,m.st0));sol.forEach(m=>h=rm(h,m));S.down[p]=1;x.down=true;lay=1;log(p,'se baja')}}
  if(x.down&&!lay)h=attachAll(S.melds.flat(),h); // al bajarse no se pega en ese turno
  S.hands[p]=h;if(!h.length)return{out:true,drew,drewCard:dc,laid:!!lay};
- const w=pickDiscard(x,h);S.hands[p]=rm(h,[w]);S.disc.push(w);log(p,'descarta',w);
+ const w=st.err&&Math.random()<st.err?randomDiscard(h):pickDiscard(x,h);S.hands[p]=rm(h,[w]);S.disc.push(w);log(p,'descarta',w);
  return{out:!S.hands[p].length,discard:w,drew,drewCard:dc,laid:!!lay}}

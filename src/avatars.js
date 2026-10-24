@@ -38,13 +38,10 @@ function man(id,{skin,shade,hair,jacket,c1,c2,beard=true,shades=false}){
  <path d="M50 44Q51.8 49 49.6 50" stroke="#a8704f" stroke-width=".9" fill="none" stroke-linecap="round"/>
  <path d="M44.5 55.4Q50 59 55.8 54.6" stroke="#6e3326" stroke-width="1.5" fill="none" stroke-linecap="round"/>
  <circle cx="66.5" cy="49" r="1.3" fill="${GOLD}"/>`)}
-const ANA={skin:'#ecbca0',shade:'#d79e82',hair:'#5a1a2a',dress:'#15131c',lips:'#c2123b',c1:'#6a1b86',c2:'#e0247f'};
-const BETO={skin:'#c78d6a',shade:'#a9704f',hair:'#14100e',jacket:'#1b1b24',c1:'#b8741a',c2:'#4d1a0e'};
+// Fábricas: redondo (para el inicio) y busto recortado (para la mesa)
+export const makeRound=(kind,o)=>{bare=false;return (kind=='f'?woman:man)(kind+(o.id||''),o)};
+export const makeBust=(kind,o)=>{bare=true;const s=(kind=='f'?woman:man)(kind+(o.id||''),o);bare=false;return s};
 const EL={skin:'#e3ad86',shade:'#c98f69',hair:'#3a2819',jacket:'#5b1224',c1:'#1b6fb0',c2:'#0a2a4f',beard:false,shades:true};
 const ELLA={skin:'#f2c9ab',shade:'#dcad8d',hair:'#d8b36a',dress:'#0e2a4c',lips:'#d81b60',c1:'#1b6fb0',c2:'#0a2a4f',long:false};
-const build=()=>[woman('a',ANA),man('b',BETO),man('m',EL),woman('f',ELLA)];
-// Redondos (para el inicio) y bustos recortados (para la mesa)
-bare=false;const [ra,rb,rm,rf]=build();
-bare=true;const [ba,bb,bm,bf]=build();
-export const AV_ANA=ra,AV_BETO=rb,AV_ME=[rm,rf];
-export const BU_ANA=ba,BU_BETO=bb,BU_ME=[bm,bf];
+export const AV_ME=[makeRound('m',{...EL,id:'me'}),makeRound('f',{...ELLA,id:'me'})];
+export const BU_ME=[makeBust('m',{...EL,id:'me'}),makeBust('f',{...ELLA,id:'me'})];

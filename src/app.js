@@ -1,9 +1,12 @@
 import {botPlay,deckDraw} from './bots.js';
 import {SU,RK,pts,CON,desc,shuf,mkDeck,classify,meets,gen,solve,rm,sides,put} from './engine.js';
 import {unlock,play,setMuted,isMuted} from './audio.js';
-import {AV_ME,BU_ME,BU_ANA,BU_BETO} from './avatars.js';
+import {AV_ME,BU_ME} from './avatars.js';
+import {ROSTER,LEVELS,DIFF_CHOICES,bustOf,pickBots} from './roster.js';
 import {phrase} from './lines.js';
 const NM=['Tú','Ana','Beto'];
+// Fija los dos rivales de la partida (G.bots guarda solo el id del roster y el nivel)
+function setBots(bs){G.bots=bs;NM[1]=ROSTER[bs[1].id].name;NM[2]=ROSTER[bs[2].id].name}
 const sleep=t=>new Promise(r=>setTimeout(r,t));
 let G={round:0,scores:[],sort:true,log:[]};
 const reqOf=()=>[...CON[G.round]].sort((a,b)=>b-a);
@@ -19,7 +22,7 @@ async function advance(){stopTurn();G.phase='bots';G.turn=(G.turn+1)%3;
   G.vis=null;G.dropId=r.discard&&r.discard.id;G.note=r.laid?{p,kind:'lay'}:null;if(r.laid)play('down');setTimeout(()=>play('discard'),r.laid?450:0);render();await sleep(1300);G.turn=(G.turn+1)%3}
  G.note=null;G.phase='draw';G.msg='Tu turno: roba del mazo o del descarte.';startTurn();play('turn');render()}
 function attach(p,c){for(const pl of G.melds)for(const m of pl){const s=sides(m,c);if(s.length){put(m,c,s[0]);return true}}return false}
-function botMove(p){const r=botPlay(G,p,(q,m,c)=>log(NM[q]+' '+m+(c?' '+cn(c):'')));if(r.out){if(r.discard)G.dropId=r.discard.id;endRound(p)}return r}
+function botMove(p){const r=botPlay(G,p,(q,m,c)=>log(NM[q]+' '+m+(c?' '+cn(c):'')),LEVELS[G.bots[p].lvl]);if(r.out){if(r.discard)G.dropId=r.discard.id;endRound(p)}return r}
 const attachTry=c=>attach(0,c);
 function endRound(w){stopTurn();const row=G.hands.map(h=>h.reduce((a,c)=>a+pts(c.r),0));G.scores.push(row);G.phase='roundEnd';G.win=w;if(G.round==9)finish();if(w==0)play('win');else if(w>0)play('lose');
  G.msg=w<0?'Se acabó el mazo: nadie salió. Se cuentan las cartas en mano.':NM[w]+(w?' se queda':' te quedas')+' sin cartas y gana la ronda.';render()}
@@ -49,7 +52,7 @@ function chooser(){const m=G.melds[G.choose.p][G.choose.i],e=(m.st+m.len-2)%13+1
 function descartar(){if(!me())return;if(G.staged.length){G.msg='Tienes combinaciones sin bajar (Deshacer o Bajarme).';return render()}
  const p=picked();if(p.length!=1){play('error');G.msg='Elige 1 carta para descartar.';return render()}
  play('discard');G.hands[0]=rm(G.hands[0],p);G.disc.push(p[0]);G.dropId=p[0].id;G.justDown=0;G.sel=new Set();if(!G.hands[0].length)return endRound(0);if(G.reshuf>=2)return endRound(-1);advance()}
-function next(){if(G.round==9){G={round:0,scores:[],sort:true,log:[]};}else G.round++;start()}
+function next(){if(G.round==9){G={round:0,scores:[],sort:true,log:[]};setBots(pickBots(DIFF))}else G.round++;start()}
 // Disposición clásica de las pintas (x, y en %) como en un mazo Bicycle
 const PIPS={2:[[50,22],[50,78]],3:[[50,22],[50,50],[50,78]],4:[[36,22],[64,22],[36,78],[64,78]],5:[[36,22],[64,22],[50,50],[36,78],[64,78]],6:[[36,22],[64,22],[36,50],[64,50],[36,78],[64,78]],7:[[36,22],[64,22],[50,36],[36,50],[64,50],[36,78],[64,78]],8:[[36,22],[64,22],[50,36],[36,50],[64,50],[50,64],[36,78],[64,78]],9:[[36,22],[64,22],[36,40],[64,40],[50,50],[36,60],[64,60],[36,78],[64,78]],10:[[36,22],[64,22],[50,30],[36,40],[64,40],[36,60],[64,60],[50,70],[36,78],[64,78]]};
 const pipsOf=(r,s)=>r==1?`<span class="big">${s}</span>`:r>=11?`<span class="fc"><b>${RK[r]}</b><u>${s}</u></span>`:(PIPS[r]||[]).map(([x,y])=>`<span class="pp${y>50?' f':''}" style="left:${x}%;top:${y}%">${s}</span>`).join('');
@@ -90,7 +93,7 @@ function plate(p){const tm=p==0&&TURN>0&&G.turnStart&&inTurn(),el=G.showScore&&G
  say=p?(G.log.find(l=>l.startsWith(NM[p]))||'').slice(NM[p].length+1):'';
  const wl=G.phase=='roundEnd'&&G.win!=null&&G.win>=0?`<em class="wl ${G.win==p?'win':'lose'}">${G.win==p?'Gana':'Pierde'}</em>`:'';
  const bub=p?(act&&G.thinking?`<div class="bubble talk">${G.say||''}<span class="dots"><i></i><i></i><i></i></span></div>`:say?`<div class="bubble say">${say}</div>`:''):'';
- return `<div class="seat"><div class="av ${act?'turn':''} ${p&&act&&G.thinking?'th':''}" style="--ac2:${COL[p]}">${AVT()[p]}${dealer?'<i class="dlr">D</i>':''}</div>${bub}<div class="plate"><b>${NM[p]}</b><span>${G.hands[p].length} cartas · ${tot} pts${tm?` · <b class="tt" id="tt">${secs}</b> s`:''}</span>${wl}${p&&act&&G.thinking?`<u class="bar" style="animation:tbar ${THINK}ms linear forwards;animation-delay:-${Date.now()-G.thinkStart}ms"></u>`:''}${tm?`<u class="bar" style="animation:tbar ${TURN}ms linear forwards,tcol ${TURN}ms linear forwards;animation-delay:-${el}ms,-${el}ms"></u>`:''}</div></div>`}
+ return `<div class="seat"><div class="av ${act?'turn':''} ${p&&act&&G.thinking?'th':''}" style="--ac2:${COL[p]}">${AVT()[p]}${dealer?'<i class="dlr">D</i>':''}</div>${bub}<div class="plate"><b>${NM[p]}${p?` <i class="lvl l${Object.keys(LEVELS).indexOf(G.bots[p].lvl)}">${G.bots[p].lvl}</i>`:''}</b><span>${G.hands[p].length} cartas · ${tot} pts${tm?` · <b class="tt" id="tt">${secs}</b> s`:''}</span>${wl}${p&&act&&G.thinking?`<u class="bar" style="animation:tbar ${THINK}ms linear forwards;animation-delay:-${Date.now()-G.thinkStart}ms"></u>`:''}${tm?`<u class="bar" style="animation:tbar ${TURN}ms linear forwards,tcol ${TURN}ms linear forwards;animation-delay:-${el}ms,-${el}ms"></u>`:''}</div></div>`}
 function peek(){G.peek=1;G.showScore=0;render()}
 // FLIP: guarda dónde estaban las cartas de la mano para que se deslicen suavemente a su nuevo sitio
 function flipBefore(){const m=new Map();if(G.flip)document.querySelectorAll('#hand .c').forEach(el=>m.set(el.dataset.id,el.getBoundingClientRect()));G.flip=0;return m}
@@ -110,7 +113,7 @@ function render(){
  const bar=end?btn('go','next',fin?'Jugar de nuevo':'Siguiente ronda',1):btn('gh','deshacer','Deshacer',mine&&G.staged.length)+btn('blue','armar','Armar',mine&&!G.down[0])+btn('go','bajar','Bajarme',mine&&!G.down[0])+btn('red','descartar','Descartar',mine);
  const modal=G.showScore||(end&&!G.peek)?`<div class="modal"><div class="sheet"><h3>${fin?(tot.filter(x=>x===Math.min(...tot)).length>1?'Fin del juego · empate': 'Fin del juego · gana '+NM[tot.indexOf(Math.min(...tot))]):end?G.msg:'Puntaje'}</h3>${t}${statsBox()}${turnChips()}${thinkChips()}<div class="row">${end?btn('go','next',fin?'Jugar de nuevo':'Siguiente ronda',1)+`<button class="chip" onclick="peek()">Ver mesa</button>`:`<button class="act go" onclick="toggleScore()">Cerrar</button>`}</div></div></div>`:'';
  document.getElementById('app').innerHTML=`<div class="hud"><button class="rbtn" onclick="toggleScore()" aria-label="Puntaje">☰</button><div class="contract"><small>Ronda ${G.round+1} de 10</small><b>${desc(CON[G.round])}${hint}</b></div><button class="rbtn" onclick="toggleSound()" aria-label="${isMuted()?'Activar sonido':'Silenciar'}">${isMuted()?'🔇':'🔊'}</button></div>
- <div class="table">${G.fly?flyEl():''}${G.note?toast():''}<div class="tray" aria-hidden="true">${['#7c4dff','#2f80ed','#e0559a','#9aa0a6','#6a2fc4','#f2b21c','#2f6fd0','#d62f2f'].map(c=>`<i style="--c:${c}"></i>`).join('')}</div><div class="seats">${plate(1)}${plate(2)}</div>
+ <div class="table">${G.fly?flyEl():''}${G.note?toast():''}<div class="seats">${plate(1)}${plate(2)}</div>
  <div class="melds2">${[1,2].map(p=>`<div class="mz">${mel(p,G.melds[p])}</div>`).join('')}</div>
  <div class="center"><div class="piles"><div class="pile ${can?'can':''} ${G.note&&G.note.kind=='deck'?'src':''}" onclick="take(1)"><div class="c back"><span class="cnt">${G.vis?G.vis.deck:G.deck.length}</span></div><small>MAZO</small></div><div class="pile ${can?'can':''} ${G.note&&G.note.kind=='disc'?'src':''}" onclick="take(0)">${top?card(top,G.dropId==top.id?'drop':''):'<div class="c"></div>'}<small>DESCARTE</small></div></div><div class="msgpill">${G.msg||G.log[0]||'…'}</div></div>
  <div class="mine"><div class="mz">${mel(0,G.melds[0])}${G.staged.map(m=>`<div class="m st">${m.cs.map(small).join('')}</div>`).join('')}</div></div></div>
@@ -122,7 +125,8 @@ function render(){
 
 function ordenar(m){G.flip=1;play('flip');G.hands[0].sort((a,b)=>!a.r-!b.r||(m=='p'?a.s-b.s||a.r-b.r:a.r-b.r||a.s-b.s));render()}
 let ME=(()=>{try{return localStorage.getItem('carioca:me')=='1'?1:0}catch(e){return 0}})();
-const AVT=()=>[BU_ME[ME],BU_ANA,BU_BETO],COL=['#3aa0ff','#e0709a','#e69a3c'];
+let DIFF=(()=>{try{const v=localStorage.getItem('carioca:diff');return DIFF_CHOICES.includes(v)?v:'Aleatoria'}catch(e){return 'Aleatoria'}})();
+const AVT=()=>[BU_ME[ME],bustOf(G.bots[1].id),bustOf(G.bots[2].id)],COL=['#3aa0ff','#e0709a','#e69a3c'];
 function toggleSound(){unlock();setMuted(!isMuted());play('click');if(G.hands)render()}
 function setupDrag(){document.querySelectorAll('#hand .c').forEach(el=>{el.style.touchAction='none';
  el.onpointerdown=e=>{const id=+el.dataset.id,x0=e.clientX,y0=e.clientY;let drag=false,lx=x0,lt=performance.now(),rot=0;el.setPointerCapture(e.pointerId);
@@ -143,12 +147,13 @@ function cancelar(){G.choose=null;render()}
 const SAVE='carioca:save',STATS='carioca:stats',EMPTY=()=>({played:0,won:0,best:null,last:[]});
 function persist(){try{if(G.phase=='roundEnd'&&G.round==9)localStorage.removeItem(SAVE);
  else if(['draw','play','roundEnd'].includes(G.phase)){const{sel,fresh,...rest}=G;localStorage.setItem(SAVE,JSON.stringify({...rest,v:1}))}}catch(e){}}
-function restore(){try{const s=JSON.parse(localStorage.getItem(SAVE));if(s&&s.v==1&&s.hands){G=Object.assign({sort:true,log:[]},s);G.taken=G.taken||[[],[],[]];G.reshuf=G.reshuf||0;G.sel=new Set();G.fresh=null;G.dealAnim=0;G.dropId=null;return true}}catch(e){}return false}
+function restore(){try{const s=JSON.parse(localStorage.getItem(SAVE));if(s&&s.v==1&&s.hands){G=Object.assign({sort:true,log:[]},s);G.taken=G.taken||[[],[],[]];G.reshuf=G.reshuf||0;G.sel=new Set();G.fresh=null;G.dealAnim=0;G.dropId=null;
+  setBots(G.bots&&G.bots[1]&&ROSTER[G.bots[1].id]&&G.bots[2]&&ROSTER[G.bots[2].id]?G.bots:[null,{id:0,lvl:'Normal'},{id:6,lvl:'Normal'}]);return true}}catch(e){}return false}
 function loadStats(){try{return Object.assign(EMPTY(),JSON.parse(localStorage.getItem(STATS)))}catch(e){return EMPTY()}}
 function finish(){if(G.statsDone)return;G.statsDone=1;const t=[0,1,2].map(i=>G.scores.reduce((x,r)=>x+r[i],0)),s=loadStats();
  s.played++;if(t[0]===Math.min(...t)&&t.filter(x=>x===t[0]).length===1)s.won++;s.best=s.best==null?t[0]:Math.min(s.best,t[0]);
- s.last=[{d:new Date().toISOString().slice(0,10),t},...s.last].slice(0,5);try{localStorage.setItem(STATS,JSON.stringify(s))}catch(e){}}
-function statsBox(){const s=loadStats();return `<div class="box"><b>Estadísticas</b> <span class="mu">(guardadas en este dispositivo)</span><div>Partidas: ${s.played} · Ganadas: ${s.won} · Mejor puntaje: ${s.best==null?'—':s.best}</div>${s.last.map(g=>`<div class="mu">${g.d}: Tú ${g.t[0]} · Ana ${g.t[1]} · Beto ${g.t[2]}</div>`).join('')}</div>`}
+ s.last=[{d:new Date().toISOString().slice(0,10),t,n:[NM[1],NM[2]]},...s.last].slice(0,5);try{localStorage.setItem(STATS,JSON.stringify(s))}catch(e){}}
+function statsBox(){const s=loadStats();return `<div class="box"><b>Estadísticas</b> <span class="mu">(guardadas en este dispositivo)</span><div>Partidas: ${s.played} · Ganadas: ${s.won} · Mejor puntaje: ${s.best==null?'—':s.best}</div>${s.last.map(g=>`<div class="mu">${g.d}: Tú ${g.t[0]} · ${(g.n||['Ana','Beto'])[0]} ${g.t[1]} · ${(g.n||['Ana','Beto'])[1]} ${g.t[2]}</div>`).join('')}</div>`}
 Object.assign(window,{sel,take,armar,deshacer,bajar,pegar,elegir,descartar,next,ordenar,cancelar,render,toggleScore,peek,setThink,setTurn,toggleSound});
 // ---- Pantalla de inicio ----
 const hasSave=()=>{try{const s=JSON.parse(localStorage.getItem(SAVE));return !!(s&&s.v==1&&s.hands)}catch(e){return false}};
@@ -159,14 +164,16 @@ function initHome(){const home=document.getElementById('home');if(!home)return n
  const sndLabel=()=>{snd.textContent=isMuted()?'🔇 Sonido: apagado':'🔊 Sonido: activado'};
  const paintPicks=()=>picks.forEach((b,i)=>{b.innerHTML=AV_ME[i];b.classList.toggle('on',i==ME)});
  cont.hidden=!saved;$('#saveNote').hidden=!saved;nw.classList.toggle('gold',!saved);
- paintPicks();sndLabel();
+ const dc=$('#diffChips'),paintDiff=()=>{dc.innerHTML=DIFF_CHOICES.map(d=>`<button type="button" class="chip ${d==DIFF?'on':''}" data-d="${d}">${d}</button>`).join('')};
+ dc.onclick=ev=>{const b=ev.target.closest('[data-d]');if(!b)return;DIFF=b.dataset.d;try{localStorage.setItem('carioca:diff',DIFF)}catch(e){}unlock();play('click');paintDiff()};
+ paintPicks();paintDiff();sndLabel();
  menuTimer=setTimeout(showMenu,2600);
  home.addEventListener('click',e=>{if(!home.classList.contains('menu-on')&&!e.target.closest('.menu')){home.classList.add('skip');showMenu()}});
  picks.forEach(b=>b.onclick=()=>{ME=+b.dataset.me;try{localStorage.setItem('carioca:me',ME)}catch(e){}unlock();play('click');paintPicks()});
  snd.onclick=()=>{unlock();setMuted(!isMuted());play('click');sndLabel()};
  nw.onclick=()=>{unlock();play('click');leave();newGame()};
  cont.onclick=()=>{unlock();play('click');if(restore()){leave();startTurn();render()}else{leave();newGame()}}}
-function newGame(){try{localStorage.removeItem(SAVE)}catch(e){}G={round:0,scores:[],sort:true,log:[]};start()}
+function newGame(){try{localStorage.removeItem(SAVE)}catch(e){}G={round:0,scores:[],sort:true,log:[]};setBots(pickBots(DIFF));start()}
 initHome();
 let rz=0;addEventListener('resize',()=>{clearTimeout(rz);rz=setTimeout(()=>{if(G.hands&&!G.showScore)render()},150)});
 if(navigator.serviceWorker)window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js'));

@@ -288,3 +288,15 @@ body{background:linear-gradient(180deg,rgba(0,0,0,0) 56%,rgba(74,44,24,.9) 100%)
 }
 @media(max-height:720px){.tray{display:none}}
 @media(max-height:620px){.av{width:50px;height:50px}.plate{margin-top:-5px;padding:8px 8px 4px}.hero{margin-top:-26px}.table{padding-bottom:34px}}
+
+/* ===== v4: globos sobre el jugador, nivel de los rivales y dificultad en el inicio ===== */
+.seats{margin-top:50px}
+.seat .bubble,.seat .bubble.talk{top:auto;bottom:100%;margin:0 0 6px}
+.seat .bubble::before{display:none}
+.seat .bubble::after,.seat .bubble.talk::after{display:block;content:"";position:absolute;left:50%;bottom:-5px;margin-left:-5px;border:5px solid transparent;border-bottom:0;border-top-color:#fffaf0}
+.lvl{display:inline-block;margin-left:3px;padding:1px 6px;border-radius:999px;vertical-align:middle;font:700 9px system-ui;font-style:normal;letter-spacing:.06em;text-transform:uppercase;color:#fff;text-shadow:none}
+.lvl.l0{background:#2f9e4f}.lvl.l1{background:#2f6fd0}.lvl.l2{background:#d9822b}.lvl.l3{background:#c4302b}
+.chips{display:flex;flex-wrap:wrap;gap:6px;justify-content:center}
+#home{scrollbar-width:none}#home::-webkit-scrollbar{display:none}
+@media(max-height:760px){.seats{margin-top:44px}}
+@media(max-height:620px){.seats{margin-top:38px}}

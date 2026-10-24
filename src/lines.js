@@ -1,5 +1,6 @@
-// Frases de los bots mientras "piensan". Ana es cauta y seductora; Beto, arriesgado y canchero.
+// Frases de los bots mientras "piensan": las chicas son cautas y seductoras; los chicos, arriesgados y cancheros.
 import {CON} from './engine.js';
+import {ROSTER} from './roster.js';
 const ANA=['Con calma, cariño… la escala se arma sola.','Ese descarte tuyo me tiene pensando.','¿De verdad tienes el trío, mi vida?','Tengo una carta que te va a doler.','No te apures, disfruto esperar.','Cuidado: tus cartas hablan más que tú.','Esta mano huele a victoria. Y a perfume.','Me encanta cuando dudas al robar.'];
 const BETO=['¡Hoy me la juego entera!','Dame ese descarte, no seas tacaño.','Yo no pienso, yo apuesto.','Bájate ya, que me aburro.','Con un comodín soy intocable.','Tranquilo, te dejo ganar… una vez.','Mira cómo te hago sudar.','¿Cartas buenas? Yo tengo mejores.'];
 const TRIO=['Tres iguales y la noche es mía.','Un buen trío cambia cualquier noche.','Los tríos siempre me salen bien.'];
@@ -12,7 +13,7 @@ const POCAS=['Me quedan pocas cartas y mucha malicia.','Casi sin cartas… casi 
 let last='';
 const pick=a=>a[Math.random()*a.length|0];
 export function phrase(G,p){
- const c=CON[G.round]||[],pool=[...(p==1?ANA:BETO)];
+ const c=CON[G.round]||[],pool=[...(ROSTER[G.bots[p].id].g=='f'?ANA:BETO)];
  if(c.some(n=>n==0))pool.push(...TRIO);
  if(c.some(n=>n>0))pool.push(...ESCALA);
  if(c.includes(-1))pool.push(...SUCIA);
