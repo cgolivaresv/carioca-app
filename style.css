@@ -377,3 +377,43 @@ body{-webkit-text-size-adjust:100%;-webkit-user-select:none;user-select:none}
 .mz.dense{min-height:44px}
 @media(max-height:760px){.av{width:56px;height:56px}.seats{margin-top:38px}.table{padding-bottom:10px}}
 @media(max-height:620px){.av{width:46px;height:46px}.seats{margin-top:34px}.table{padding-bottom:8px}}
+
+/* ===== v9: cartas de un mismo tamaño, mazos en 3D, nombres más chicos, mazos centrados ===== */
+:root{--cw:54px;--ch:78px;--mw:48px;--mh:70px}
+@media(max-width:390px){:root{--cw:48px;--ch:70px;--mw:42px;--mh:61px}}
+@media(max-height:760px){:root{--cw:48px;--ch:70px;--mw:40px;--mh:58px}}
+@media(max-height:620px){:root{--cw:42px;--ch:61px;--mw:36px;--mh:52px}}
+/* nombres más chicos */
+.plate{min-width:108px;padding:10px 10px 5px}
+.plate b{font-size:12px}
+.plate span{font-size:10px}
+.lvl{display:none}
+/* cartas de la mano y de los mazos: mismo tamaño */
+.hand .c{width:var(--cw);height:var(--ch)}
+.pile .c{width:var(--cw);height:var(--ch);font-size:14px}
+/* cartas bajadas en la mesa: más grandes y legibles */
+.c.sm{width:var(--mw);height:var(--mh)}
+.c.sm .t{font-size:12.5px;top:3px;left:4px}
+.c.sm .ct{font-size:26px;padding-top:15px}
+.m .c+.c{margin-left:calc(var(--mw) * -1 + 19px)}
+.mz.dense{--mw:36px;--mh:52px;min-height:0}
+.mz.dense .c.sm{width:var(--mw);height:var(--mh)}
+.mz.dense .c.sm .t{font-size:10px;top:2px;left:3px}
+.mz.dense .c.sm .ct{font-size:19px;padding-top:11px}
+.mz.dense .m .c+.c{margin-left:calc(var(--mw) * -1 + 17px)}
+.toast .c.sm{width:24px;height:34px}
+/* mesa en columna: los mazos quedan centrados en el espacio libre */
+.table{display:flex;flex-direction:column}
+.table>*{flex:none}
+.table>.center{flex:1 1 auto;justify-content:center;margin:0}
+.piles{width:100%;justify-content:center;gap:22px;zoom:1;perspective:700px}
+.pile{width:84px}
+/* mazos con grosor, casi isométricos, y siempre resaltados */
+.stk{position:relative;margin:4px 6px 6px;transform:translateX(calc(var(--th) * -.5)) rotateX(14deg) rotateY(-9deg);transform-style:preserve-3d}
+.stk::before,.stk::after{content:"";position:absolute;inset:0;border-radius:7px;z-index:0;background:repeating-linear-gradient(135deg,#fffdf7 0 1px,#b9ad92 1px 2px)}
+.stk::before{transform:translate(calc(var(--th) * .5),calc(var(--th) * .5))}
+.stk::after{transform:translate(var(--th),var(--th));filter:brightness(.82);box-shadow:0 9px 14px rgba(0,0,0,.55)}
+.stk .c{position:relative;z-index:1;box-shadow:0 0 0 2px rgba(255,213,74,.6),0 0 16px rgba(255,213,74,.4),0 2px 5px rgba(0,0,0,.5)}
+.stk .c.back{box-shadow:inset 0 0 0 2px #a0121a,inset 0 0 0 3px rgba(255,255,255,.6),0 0 0 2px rgba(255,213,74,.55),0 0 16px rgba(255,213,74,.4)}
+.pile small{color:#f3e6b8;font-weight:600}
+.pile.can small{color:#ffd54a}
