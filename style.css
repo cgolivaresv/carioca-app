@@ -523,3 +523,10 @@ body{-webkit-text-size-adjust:100%;-webkit-user-select:none;user-select:none}
 
 /* anula la regla antigua de pantallas bajas que dejaba a los rivales en 34 px */
 .seats .av{width:auto;height:var(--avh)}
+
+/* horizontal: la columna de tu avatar se ajusta a su contenido y los textos de las placas no se parten */
+@media (orientation:landscape) and (min-width:640px){
+ #app{grid-template-columns:auto minmax(0,1fr) minmax(92px,128px)}
+ .plate span{white-space:nowrap}
+ .plate b{white-space:nowrap}
+}
