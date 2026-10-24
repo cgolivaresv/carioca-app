@@ -350,3 +350,17 @@ body{-webkit-text-size-adjust:100%;-webkit-user-select:none;user-select:none}
 .table{padding-bottom:18px}
 @media(max-height:760px){.hero{margin-top:2px}.table{padding-bottom:14px}}
 @media(max-height:620px){.hero{margin-top:0}.table{padding-bottom:12px}}
+
+/* ===== v7: todo cabe en la mesa (mis combinaciones siempre visibles) ===== */
+.hero{display:flex;align-items:flex-end;justify-content:center;gap:10px}
+.hero .seat{width:auto;flex:none}
+.sortb{flex:none;margin-bottom:6px;padding:7px 10px;font-size:12px;white-space:nowrap}
+.av{width:68px;height:68px}
+.seats{margin-top:46px}
+.mine{margin-top:4px;padding-top:4px}
+.mz.dense .c.sm{width:32px;height:46px}
+.mz.dense .c.sm .t{font-size:9px;top:2px;left:3px}
+.mz.dense .c.sm .ct{font-size:17px;padding-top:9px}
+.mz.dense .m .c+.c{margin-left:-12px}
+@media(max-height:760px){.seats{margin-top:40px}.av{width:62px;height:62px}}
+@media(max-height:620px){.seats{margin-top:36px}.av{width:50px;height:50px}}

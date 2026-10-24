@@ -115,12 +115,11 @@ function render(){
  const modal=G.showScore||(end&&!G.peek)?`<div class="modal"><div class="sheet"><h3>${fin?(tot.filter(x=>x===Math.min(...tot)).length>1?'Fin del juego · empate': 'Fin del juego · gana '+NM[tot.indexOf(Math.min(...tot))]):end?G.msg:'Puntaje'}</h3>${t}${statsBox()}${turnChips()}${thinkChips()}<div class="row">${end?btn('go','next',fin?'Jugar de nuevo':'Siguiente ronda',1)+`<button class="chip" onclick="peek()">Ver mesa</button>`:`<button class="act go" onclick="toggleScore()">Cerrar</button>`}</div></div></div>`:'';
  document.getElementById('app').innerHTML=`<div class="hud"><button class="rbtn" onclick="toggleScore()" aria-label="Puntaje">☰</button><div class="contract"><small>Ronda ${G.round+1} de 10</small><b>${desc(CON[G.round])}${hint}</b></div><button class="rbtn" onclick="toggleSound()" aria-label="${isMuted()?'Activar sonido':'Silenciar'}">${isMuted()?'🔇':'🔊'}</button></div>
  <div class="table">${G.fly?flyEl():''}${G.note?toast():''}<div class="seats">${plate(1)}${plate(2)}</div>
- <div class="melds2">${[1,2].map(p=>`<div class="mz">${mel(p,G.melds[p])}</div>`).join('')}</div>
+ <div class="melds2">${[1,2].map(p=>`<div class="mz${G.melds[p].length>2?' dense':''}">${mel(p,G.melds[p])}</div>`).join('')}</div>
  <div class="center"><div class="piles"><div class="pile ${can?'can':''} ${G.note&&G.note.kind=='deck'?'src':''}" onclick="take(1)"><div class="c back"><span class="cnt">${G.vis?G.vis.deck:G.deck.length}</span></div><small>MAZO</small></div><div class="pile ${can?'can':''} ${G.note&&G.note.kind=='disc'?'src':''}" onclick="take(0)">${top?card(top,G.dropId==top.id?'drop':''):'<div class="c"></div>'}<small>DESCARTE</small></div></div><div class="msgpill">${G.msg||G.log[0]||'…'}</div></div>
- <div class="mine"><div class="mz">${mel(0,G.melds[0])}${G.staged.map(m=>`<div class="m st">${m.cs.map(small).join('')}</div>`).join('')}</div></div></div>
- <div class="hero">${plate(0)}</div>${G.choose?chooser():''}
+ ${G.melds[0].length+G.staged.length?`<div class="mine"><div class="mz${G.melds[0].length+G.staged.length>3?' dense':''}">${mel(0,G.melds[0])}${G.staged.map(m=>`<div class="m st">${m.cs.map(small).join('')}</div>`).join('')}</div></div>`:''}</div>
+ <div class="hero"><button class="chip sortb" onclick="ordenar('p')">♠ Palo</button>${plate(0)}<button class="chip sortb" onclick="ordenar('n')">A Número</button></div>${G.choose?chooser():''}
  <div id="hand" class="hand" style="--ov:${ov}px">${h.map((c,i)=>card(c,(G.sel.has(c.id)?'s ':'')+(G.dealAnim||G.fresh&&G.fresh.has(c.id)?'deal':''),G.dealAnim?i*50:0)).join('')}</div>
- <div class="tools"><button class="chip" onclick="ordenar('p')">♠ Por palo</button><button class="chip" onclick="ordenar('n')">A Por número</button></div>
  <div class="bar2">${bar}</div>${modal}`;
  fitHand();setupDrag();flipAfter(flipPrev);persist();G.dealAnim=0;G.fresh=null;G.dropId=null;G.fly=null}
 
