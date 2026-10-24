@@ -534,3 +534,7 @@ body{-webkit-text-size-adjust:100%;-webkit-user-select:none;user-select:none}
 /* con 10 avatares el selector cabe sin desplazarse */
 .picks{grid-template-columns:repeat(5,1fr);max-height:none;overflow:visible;-webkit-mask-image:none;mask-image:none}
 .picks .pick img{object-position:top center}
+
+/* el contenedor del selector necesita un ancho definido para que las tarjetas no se colapsen */
+.menu .who{width:100%;max-width:330px}
+.menu .who .picks{width:100%}
