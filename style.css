@@ -530,3 +530,7 @@ body{-webkit-text-size-adjust:100%;-webkit-user-select:none;user-select:none}
  .plate span{white-space:nowrap}
  .plate b{white-space:nowrap}
 }
+
+/* con 10 avatares el selector cabe sin desplazarse */
+.picks{grid-template-columns:repeat(5,1fr);max-height:none;overflow:visible;-webkit-mask-image:none;mask-image:none}
+.picks .pick img{object-position:top center}

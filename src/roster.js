@@ -1,5 +1,5 @@
 // Catálogo central de jugadores: nombre, género, imágenes de cada avatar y niveles de dificultad.
-// Los 28 avatares son PNG/WebP transparentes en avatars/busts (mesa) y avatars/portraits (selector).
+// Los 10 avatares son PNG/WebP transparentes en avatars/busts (mesa) y avatars/portraits (selector).
 // Si una imagen no carga, se dibuja un avatar SVG de respaldo (src/avatars.js).
 import {makeBust,makeRound} from './avatars.js';
 // err: probabilidad de jugar mal (descartar al azar, no tomar una carta útil) · lazy: probabilidad de no bajarse aunque pueda
@@ -30,14 +30,10 @@ const FB_M=[
  M({skin:'#d9a58a',hair:'#b9bcc2',jacket:'#111116',beard:true}),
  M({skin:'#c98a64',hair:'#2a1a12',jacket:'#0f3d3a',beard:true,shades:true})
 ];
-// [nombre, género, ancho y alto del busto recortado]; el orden es avatar-01 … avatar-28
+// [nombre, género, ancho y alto del busto recortado]; el orden es avatar-01 … avatar-10
 const LIST=[
- ['Mateo','m',384,384],['Valentina','f',384,384],['Santiago','m',384,384],['Andrés','m',384,384],['Sofía','f',384,384],
- ['Diego','m',384,384],['Ricardo','m',384,384],['Rafael','m',384,384],['Emilio','m',384,384],['Joaquín','m',384,384],
- ['Gonzalo','m',384,384],['Esteban','m',384,384],['Nicolás','m',384,384],['Isabella','f',384,384],['Camila','f',384,384],
- ['Renata','f',384,384],['Luciana','f',384,384],['Mariana','f',384,384],['Beto','m',343,384],['Carolina','f',384,373],
- ['Tomás','m',384,365],['Ana','f',384,380],['Julián','m',384,271],['Paula','f',384,366],['Sebastián','m',384,332],
- ['Daniela','f',384,379],['Alonso','m',296,384],['Fernanda','f',336,384]
+ ['Valentina','f',253,384],['Dakota','f',250,384],['Renata','f',241,384],['Fiona','f',294,384],['Luna','f',235,384],
+ ['Santiago','m',275,384],['Ricardo','m',252,384],['Joaquín','m',255,384],['Aurelio','m',289,384],['Mateo','m',306,384]
 ];
 let nf=0,nm=0;
 export const ROSTER=LIST.map(([name,g,w,h],i)=>{
