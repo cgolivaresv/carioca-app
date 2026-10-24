@@ -344,3 +344,9 @@ body{-webkit-text-size-adjust:100%;-webkit-user-select:none;user-select:none}
 .m .c+.c{margin-left:-14px}
 .pile .c{width:54px;height:78px;font-size:14px}
 .toast .c.sm{width:24px;height:34px}
+
+/* el busto del jugador ya no se monta sobre la mesa ni sobre el mensaje de turno */
+.hero{margin-top:2px}
+.table{padding-bottom:18px}
+@media(max-height:760px){.hero{margin-top:2px}.table{padding-bottom:14px}}
+@media(max-height:620px){.hero{margin-top:0}.table{padding-bottom:12px}}
