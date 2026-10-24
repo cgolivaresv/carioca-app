@@ -427,3 +427,27 @@ body{-webkit-text-size-adjust:100%;-webkit-user-select:none;user-select:none}
 /* esquinas inferiores menos cerradas para no cortar mis combinaciones */
 .table{border-radius:20px 20px 30% 30%/20px 20px 4% 4%}
 .mine{padding-bottom:6px}
+
+/* ===== v10: avatares PNG/WebP transparentes ===== */
+:root{--avh:70px}
+@media(max-height:760px){:root{--avh:60px}}
+@media(max-height:620px){:root{--avh:50px}}
+/* figura recortada: se escala por altura, sin fondo, sin deformarse y sin cortar partes */
+.av{width:auto;min-width:var(--avh);height:var(--avh);display:flex;align-items:flex-end;justify-content:center;overflow:visible}
+.av picture{display:block;height:100%}
+.av img.avimg{display:block;height:100%;width:auto;max-width:118px;object-fit:contain;object-position:bottom center;-webkit-user-drag:none;user-select:none;pointer-events:none}
+.av svg{height:100%;width:auto}
+.seats{margin-top:34px}
+.table{padding-top:4px}
+.melds2{margin-top:2px}
+.mine{margin-top:2px;padding-top:2px}
+@media(max-height:760px){.seats{margin-top:32px}}
+@media(max-height:620px){.seats{margin-top:30px}}
+/* selector de personajes: tarjetas con retrato */
+.picks{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;width:100%;max-width:330px;max-height:206px;margin:0 auto;padding:6px 4px;overflow-y:auto;overscroll-behavior:contain;scrollbar-width:none;-webkit-mask-image:linear-gradient(#000 84%,transparent);mask-image:linear-gradient(#000 84%,transparent)}
+.picks::-webkit-scrollbar{display:none}
+.picks .pick{position:relative;width:100%;height:auto;aspect-ratio:1;padding:0;overflow:hidden;border-radius:14px;border:2px solid rgba(230,195,92,.22);background:radial-gradient(circle at 50% 30%,#4a3566,#160e22);opacity:.82;transition:transform .2s,box-shadow .2s,border-color .2s,opacity .2s}
+.picks .pick picture,.picks .pick svg{display:block;width:100%;height:100%}
+.picks .pick img{display:block;width:100%;height:100%;object-fit:cover;object-position:top center;pointer-events:none}
+.picks .pick.on{opacity:1;transform:scale(1.05);border-color:#e6c35c;box-shadow:0 0 0 2px rgba(230,195,92,.5),0 0 18px rgba(230,195,92,.5)}
+.picks .pick.on::after{content:"✓";position:absolute;right:3px;top:3px;width:18px;height:18px;border-radius:50%;background:#e6c35c;color:#2a1a05;font:800 11px/18px system-ui;text-align:center}

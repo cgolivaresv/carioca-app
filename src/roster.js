@@ -1,4 +1,6 @@
-// Jugadores virtuales: nombre, género, aspecto y niveles de dificultad.
+// Catálogo central de jugadores: nombre, género, imágenes de cada avatar y niveles de dificultad.
+// Los 28 avatares son PNG/WebP transparentes en avatars/busts (mesa) y avatars/portraits (selector).
+// Si una imagen no carga, se dibuja un avatar SVG de respaldo (src/avatars.js).
 import {makeBust,makeRound} from './avatars.js';
 // err: probabilidad de jugar mal (descartar al azar, no tomar una carta útil) · lazy: probabilidad de no bajarse aunque pueda
 export const LEVELS={
@@ -9,25 +11,48 @@ export const LEVELS={
 };
 export const LEVEL_NAMES=Object.keys(LEVELS);
 export const DIFF_CHOICES=[...LEVEL_NAMES,'Aleatoria'];
+// Aspectos SVG de respaldo (6 femeninos y 6 masculinos, se reparten entre los 28)
 const bg={c1:'#444',c2:'#222'};
-const W=(name,o)=>({name,g:'f',o:{...bg,gem:'#e6c35c',...o}}),M=(name,o)=>({name,g:'m',o:{...bg,beard:false,shades:false,...o}});
-export const ROSTER=[
- W('Ana',{skin:'#ecbca0',shade:'#d79e82',hair:'#5a1a2a',dress:'#15131c',lips:'#c2123b',long:true}),
- W('Valentina',{skin:'#d9a07e',shade:'#bf8462',hair:'#0f0b0d',dress:'#8d1230',lips:'#b3122f',long:true}),
- W('Camila',{skin:'#e8b794',shade:'#cf9a78',hair:'#6b3f22',dress:'#0e5a45',lips:'#c4455a',long:false}),
- W('Sofía',{skin:'#f3cdb0',shade:'#dcb092',hair:'#e3c27c',dress:'#1b2d57',lips:'#d1365a',long:true}),
- W('Isabella',{skin:'#eac2a4',shade:'#d2a688',hair:'#8f3a1d',dress:'#4b1f6e',lips:'#b81d4b',long:false}),
- W('Luciana',{skin:'#a8714e',shade:'#8a5a3b',hair:'#17100d',dress:'#b88a2a',lips:'#9c1c3d',long:true}),
- M('Beto',{skin:'#c78d6a',shade:'#a9704f',hair:'#14100e',jacket:'#1b1b24',beard:true}),
- M('Mateo',{skin:'#e6b48e',shade:'#cb966f',hair:'#4a3220',jacket:'#2b2f3a'}),
- M('Santiago',{skin:'#9a6644',shade:'#7f5236',hair:'#0e0b09',jacket:'#5b1224',beard:true}),
- M('Diego',{skin:'#efc6a2',shade:'#d6a982',hair:'#d9b970',jacket:'#1d3557',shades:true}),
- M('Andrés',{skin:'#d9a58a',shade:'#bd8a6f',hair:'#b9bcc2',jacket:'#111116',beard:true}),
- M('Rafael',{skin:'#c98a64',shade:'#ad7050',hair:'#2a1a12',jacket:'#0f3d3a',beard:true,shades:true})
+const W=o=>({...bg,gem:'#e6c35c',...o}),M=o=>({...bg,beard:false,shades:false,...o});
+const FB_F=[
+ W({skin:'#ecbca0',hair:'#5a1a2a',dress:'#15131c',lips:'#c2123b',long:true}),
+ W({skin:'#d9a07e',hair:'#0f0b0d',dress:'#8d1230',lips:'#b3122f',long:true}),
+ W({skin:'#e8b794',hair:'#6b3f22',dress:'#0e5a45',lips:'#c4455a',long:false}),
+ W({skin:'#f3cdb0',hair:'#e3c27c',dress:'#1b2d57',lips:'#d1365a',long:true}),
+ W({skin:'#eac2a4',hair:'#8f3a1d',dress:'#4b1f6e',lips:'#b81d4b',long:false}),
+ W({skin:'#a8714e',hair:'#17100d',dress:'#b88a2a',lips:'#9c1c3d',long:true})
 ];
-const cache=[],rcache=[];
-export const bustOf=i=>cache[i]||(cache[i]=makeBust(ROSTER[i].g,{...ROSTER[i].o,id:'r'+i}));
-export const roundOf=i=>rcache[i]||(rcache[i]=makeRound(ROSTER[i].g,{...ROSTER[i].o,id:'p'+i}));
+const FB_M=[
+ M({skin:'#c78d6a',hair:'#14100e',jacket:'#1b1b24',beard:true}),
+ M({skin:'#e6b48e',hair:'#4a3220',jacket:'#2b2f3a'}),
+ M({skin:'#9a6644',hair:'#0e0b09',jacket:'#5b1224',beard:true}),
+ M({skin:'#efc6a2',hair:'#d9b970',jacket:'#1d3557',shades:true}),
+ M({skin:'#d9a58a',hair:'#b9bcc2',jacket:'#111116',beard:true}),
+ M({skin:'#c98a64',hair:'#2a1a12',jacket:'#0f3d3a',beard:true,shades:true})
+];
+// [nombre, género, ancho y alto del busto recortado]; el orden es avatar-01 … avatar-28
+const LIST=[
+ ['Mateo','m',384,384],['Valentina','f',384,384],['Santiago','m',384,384],['Andrés','m',384,384],['Sofía','f',384,384],
+ ['Diego','m',384,384],['Ricardo','m',384,384],['Rafael','m',384,384],['Emilio','m',384,384],['Joaquín','m',384,384],
+ ['Gonzalo','m',384,384],['Esteban','m',384,384],['Nicolás','m',384,384],['Isabella','f',384,384],['Camila','f',384,384],
+ ['Renata','f',384,384],['Luciana','f',384,384],['Mariana','f',384,384],['Beto','m',343,384],['Carolina','f',384,373],
+ ['Tomás','m',384,365],['Ana','f',384,380],['Julián','m',384,271],['Paula','f',384,366],['Sebastián','m',384,332],
+ ['Daniela','f',384,379],['Alonso','m',296,384],['Fernanda','f',336,384]
+];
+let nf=0,nm=0;
+export const ROSTER=LIST.map(([name,g,w,h],i)=>{
+ const id='avatar-'+String(i+1).padStart(2,'0'),fb=g=='f'?FB_F[nf++%6]:FB_M[nm++%6];
+ return {id,name,g,w,h,fb,
+  bust:`avatars/busts/${id}.png`,bustWebp:`avatars/busts/${id}.webp`,
+  portrait:`avatars/portraits/${id}.png`,portraitWebp:`avatars/portraits/${id}.webp`};
+});
+const pic=(webp,png,w,h,i,kind,cls,lazy)=>`<picture><source type="image/webp" srcset="${webp}"><img class="${cls}" src="${png}" width="${w}" height="${h}" alt="" decoding="${lazy?'async':'sync'}"${lazy?' loading="lazy"':''} draggable="false" data-av="${i}" data-kind="${kind}" onerror="avFail(this)"></picture>`;
+// Busto para la mesa (transparente, se escala por altura) y retrato cuadrado para el selector
+export const bustOf=i=>{const r=ROSTER[i];return pic(r.bustWebp,r.bust,r.w,r.h,i,'bust','avimg',false)};
+export const roundOf=i=>{const r=ROSTER[i];return pic(r.portraitWebp,r.portrait,160,160,i,'portrait','pimg',true)};
+// Respaldo SVG si una imagen falla
+export const fallbackBust=i=>makeBust(ROSTER[i].g,{...ROSTER[i].fb,id:'fb'+i});
+export const fallbackRound=i=>makeRound(ROSTER[i].g,{...ROSTER[i].fb,id:'fr'+i});
 const shuffle=a=>{for(let i=a.length-1;i>0;i--){const j=Math.random()*(i+1)|0;[a[i],a[j]]=[a[j],a[i]]}return a};
 // Elige 2 jugadores al azar (distintos entre sí y del avatar del jugador); con 'Aleatoria' cada uno recibe un nivel distinto al azar
 export function pickBots(level,exclude=-1){

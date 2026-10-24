@@ -2,7 +2,7 @@ import {botPlay,deckDraw} from './bots.js';
 import {SU,RK,pts,CON,desc,shuf,mkDeck,classify,meets,gen,solve,rm,sides,put} from './engine.js';
 import {unlock,play,setMuted,isMuted} from './audio.js';
 import {JOKER} from './joker.js';
-import {ROSTER,LEVELS,bustOf,roundOf,pickBots} from './roster.js';
+import {ROSTER,LEVELS,bustOf,roundOf,pickBots,fallbackBust,fallbackRound} from './roster.js';
 import {phrase} from './lines.js';
 const NM=['Tú','Ana','Beto'];
 // Fija los dos rivales de la partida (G.bots guarda solo el id del roster y el nivel)
@@ -156,6 +156,8 @@ function finish(){if(G.statsDone)return;G.statsDone=1;const t=[0,1,2].map(i=>G.s
  s.played++;if(t[0]===Math.min(...t)&&t.filter(x=>x===t[0]).length===1)s.won++;s.best=s.best==null?t[0]:Math.min(s.best,t[0]);
  s.last=[{d:new Date().toISOString().slice(0,10),t,n:[NM[1],NM[2]]},...s.last].slice(0,5);try{localStorage.setItem(STATS,JSON.stringify(s))}catch(e){}}
 function statsBox(){const s=loadStats();return `<div class="box"><b>Estadísticas</b> <span class="mu">(guardadas en este dispositivo)</span><div>Partidas: ${s.played} · Ganadas: ${s.won} · Mejor puntaje: ${s.best==null?'—':s.best}</div>${s.last.map(g=>`<div class="mu">${g.d}: Tú ${g.t[0]} · ${(g.n||['Ana','Beto'])[0]} ${g.t[1]} · ${(g.n||['Ana','Beto'])[1]} ${g.t[2]}</div>`).join('')}</div>`}
+// si una imagen de avatar no carga, se cambia por el avatar SVG de respaldo
+window.avFail=el=>{el.onerror=null;const i=+el.dataset.av;(el.closest('picture')||el).outerHTML=el.dataset.kind=='bust'?fallbackBust(i):fallbackRound(i)};
 Object.assign(window,{sel,take,armar,deshacer,bajar,pegar,elegir,descartar,next,ordenar,cancelar,render,toggleScore,peek,setThink,setTurn,toggleSound});
 // ---- Pantalla de inicio ----
 const hasSave=()=>{try{const s=JSON.parse(localStorage.getItem(SAVE));return !!(s&&s.v==1&&s.hands)}catch(e){return false}};
@@ -169,7 +171,7 @@ function initHome(){const home=document.getElementById('home');if(!home)return n
  const saveName=()=>{PN=nameIn.value.trim().slice(0,12)||'Tú';try{localStorage.setItem('carioca:name',PN)}catch(e){}};
  nameIn.value=PN=='Tú'?'':PN;nameIn.oninput=saveName;
  cont.hidden=!saved;$('#saveNote').hidden=!saved;nw.classList.toggle('gold',!saved);
- paintPicks();sndLabel();
+ paintPicks();sndLabel();pk.scrollTop=Math.max(0,picks[ME].offsetTop-pk.clientHeight/3);
  menuTimer=setTimeout(showMenu,2600);
  home.addEventListener('click',e=>{if(!home.classList.contains('menu-on')&&!e.target.closest('.menu')){home.classList.add('skip');showMenu()}});
  pk.onclick=ev=>{const b=ev.target.closest('.pick');if(!b)return;ME=+b.dataset.me;try{localStorage.setItem('carioca:avatar',ME)}catch(e){}unlock();play('click');paintPicks()};
