@@ -1,6 +1,7 @@
 // Avatares ilustrados en SVG (sin imágenes). Cada uno dibuja un busto dentro de un círculo.
 const GOLD='#e6c35c';
-const wrap=(id,c1,c2,body)=>`<svg viewBox="0 0 100 100" aria-hidden="true"><defs><linearGradient id="g${id}" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${c1}"/><stop offset="1" stop-color="${c2}"/></linearGradient><clipPath id="k${id}"><circle cx="50" cy="50" r="50"/></clipPath></defs><g clip-path="url(#k${id})"><rect width="100" height="100" fill="url(#g${id})"/><ellipse cx="50" cy="100" rx="46" ry="22" fill="#000" opacity=".25"/>${body}</g></svg>`;
+let bare=false; // true: busto recortado, sin fondo ni círculo (para pararlo sobre la mesa)
+const wrap=(id,c1,c2,body)=>bare?`<svg viewBox="0 0 100 100" aria-hidden="true">${body}</svg>`:`<svg viewBox="0 0 100 100" aria-hidden="true"><defs><linearGradient id="g${id}" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${c1}"/><stop offset="1" stop-color="${c2}"/></linearGradient><clipPath id="k${id}"><circle cx="50" cy="50" r="50"/></clipPath></defs><g clip-path="url(#k${id})"><rect width="100" height="100" fill="url(#g${id})"/><ellipse cx="50" cy="100" rx="46" ry="22" fill="#000" opacity=".25"/>${body}</g></svg>`;
 function woman(id,{skin,shade,hair,dress,lips,c1,c2,long=true,gem=GOLD}){
  const back=long?`<path d="M24 50Q18 12 50 10Q82 12 76 50Q80 78 70 98L30 98Q20 78 24 50Z" fill="${hair}"/>`
   :`<path d="M25 48Q20 14 50 11Q80 14 75 48Q77 62 71 70Q60 66 50 66Q40 66 29 70Q23 62 25 48Z" fill="${hair}"/>`;
@@ -37,9 +38,13 @@ function man(id,{skin,shade,hair,jacket,c1,c2,beard=true,shades=false}){
  <path d="M50 44Q51.8 49 49.6 50" stroke="#a8704f" stroke-width=".9" fill="none" stroke-linecap="round"/>
  <path d="M44.5 55.4Q50 59 55.8 54.6" stroke="#6e3326" stroke-width="1.5" fill="none" stroke-linecap="round"/>
  <circle cx="66.5" cy="49" r="1.3" fill="${GOLD}"/>`)}
-export const AV_ANA=woman('a',{skin:'#ecbca0',shade:'#d79e82',hair:'#5a1a2a',dress:'#15131c',lips:'#c2123b',c1:'#6a1b86',c2:'#e0247f'});
-export const AV_BETO=man('b',{skin:'#c78d6a',shade:'#a9704f',hair:'#14100e',jacket:'#1b1b24',c1:'#b8741a',c2:'#4d1a0e'});
-export const AV_ME=[
- man('m',{skin:'#e3ad86',shade:'#c98f69',hair:'#3a2819',jacket:'#5b1224',c1:'#1b6fb0',c2:'#0a2a4f',beard:false,shades:true}),
- woman('f',{skin:'#f2c9ab',shade:'#dcad8d',hair:'#d8b36a',dress:'#0e2a4c',lips:'#d81b60',c1:'#1b6fb0',c2:'#0a2a4f',long:false})
-];
+const ANA={skin:'#ecbca0',shade:'#d79e82',hair:'#5a1a2a',dress:'#15131c',lips:'#c2123b',c1:'#6a1b86',c2:'#e0247f'};
+const BETO={skin:'#c78d6a',shade:'#a9704f',hair:'#14100e',jacket:'#1b1b24',c1:'#b8741a',c2:'#4d1a0e'};
+const EL={skin:'#e3ad86',shade:'#c98f69',hair:'#3a2819',jacket:'#5b1224',c1:'#1b6fb0',c2:'#0a2a4f',beard:false,shades:true};
+const ELLA={skin:'#f2c9ab',shade:'#dcad8d',hair:'#d8b36a',dress:'#0e2a4c',lips:'#d81b60',c1:'#1b6fb0',c2:'#0a2a4f',long:false};
+const build=()=>[woman('a',ANA),man('b',BETO),man('m',EL),woman('f',ELLA)];
+// Redondos (para el inicio) y bustos recortados (para la mesa)
+bare=false;const [ra,rb,rm,rf]=build();
+bare=true;const [ba,bb,bm,bf]=build();
+export const AV_ANA=ra,AV_BETO=rb,AV_ME=[rm,rf];
+export const BU_ANA=ba,BU_BETO=bb,BU_ME=[bm,bf];

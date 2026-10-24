@@ -170,7 +170,7 @@ body{background:radial-gradient(ellipse at 50% -10%,#2a0f3d 0,#0a0713 55%,#05030
 .plate span{color:#cdb98a}
 .av{padding:0;background:#120b1c;border:2.5px solid var(--ac2)}
 .av svg{width:100%;height:100%;display:block;border-radius:50%}
-.av.act{flex:none;padding:0;border:2.5px solid var(--ac2);border-radius:50%;box-shadow:0 0 0 3px rgba(230,195,92,.6),0 0 22px var(--gold)}
+.av.turn{flex:none}
 .slot{position:relative;height:34px;margin-bottom:2px;overflow:visible}
 .bubble.talk{position:absolute;left:50%;bottom:6px;transform:translateX(-50%);width:max-content;max-width:150px;white-space:normal;text-overflow:clip;overflow:visible;text-align:center;line-height:1.25;font:600 11px system-ui;padding:5px 9px;background:#fffaf0;color:#2a1a30;border-radius:12px;box-shadow:0 3px 10px rgba(0,0,0,.5);animation:pop .3s;z-index:3}
 .bubble.talk::after{content:"";position:absolute;left:50%;bottom:-5px;margin-left:-5px;border:5px solid transparent;border-bottom:0;border-top-color:#fffaf0}
@@ -239,3 +239,52 @@ body{background:radial-gradient(ellipse at 50% -10%,#2a0f3d 0,#0a0713 55%,#05030
 }
 @media(max-height:620px){.hand .c{font-size:11px}.slot{height:28px}}
 @media(max-width:390px){.hand .c{font-size:12px}}
+
+/* ===== v3: casino clásico (fieltro, placas metálicas, bustos, bandeja de fichas) ===== */
+body{background:linear-gradient(180deg,rgba(0,0,0,0) 56%,rgba(74,44,24,.9) 100%),radial-gradient(ellipse at 50% -10%,#2a0f3d 0,#0a0713 55%,#050309 100%) fixed}
+.table{background:repeating-radial-gradient(circle at 30% 20%,rgba(255,255,255,.03) 0 1px,transparent 1px 4px),radial-gradient(ellipse at 50% 30%,#23a055 0,#14773c 52%,#0b5128 100%);border:0;border-radius:20px 20px 46% 46%/20px 20px 9% 9%;padding:10px 12px 54px;box-shadow:0 0 0 4px #5a3820,0 0 0 8px #2a170c,0 12px 30px rgba(0,0,0,.7),inset 0 0 70px rgba(0,0,0,.5)}
+.table::before{display:none}
+/* bandeja de fichas */
+.tray{display:flex;gap:3px;justify-content:center;align-items:flex-end;width:max-content;max-width:100%;margin:0 auto 6px;padding:5px 8px 3px;background:linear-gradient(#3a3d44,#17181c);border:1px solid #5b5e66;border-radius:6px;box-shadow:0 3px 8px rgba(0,0,0,.6),inset 0 1px 0 rgba(255,255,255,.2)}
+.tray i{width:20px;height:28px;border-radius:40% 40% 20% 20%/16% 16% 10% 10%;background:repeating-linear-gradient(180deg,var(--c) 0 3px,rgba(255,255,255,.55) 3px 4px,var(--c) 4px 7px);box-shadow:inset 0 0 0 1px rgba(0,0,0,.35),0 1px 2px rgba(0,0,0,.5)}
+/* jugadores: busto recortado y placa metálica */
+.seat{position:relative;overflow:visible}
+.av{width:76px;height:76px;border:0;border-radius:0;background:none;box-shadow:none;overflow:visible;z-index:1;filter:drop-shadow(0 6px 6px rgba(0,0,0,.45))}
+.av svg{border-radius:0}
+.av.turn{filter:drop-shadow(0 0 7px rgba(255,214,64,.95)) drop-shadow(0 6px 6px rgba(0,0,0,.4))}
+.av.turn.th{animation:sway 2s ease-in-out infinite}
+.dlr{right:-2px;bottom:8px}
+.plate{margin-top:-28px;padding:20px 12px 6px;min-width:128px;background:linear-gradient(#f2f3f5,#b7b9c0 46%,#8a8d95 54%,#c9cbd1);border:2px solid #4c4f57;border-radius:8px;box-shadow:inset 0 0 0 1px rgba(255,255,255,.7),0 3px 7px rgba(0,0,0,.55);overflow:hidden}
+.plate b{display:block;color:#16171c;font:700 14px Georgia,'Times New Roman',serif;text-shadow:0 1px 0 rgba(255,255,255,.7)}
+.plate span{color:#2c2e36;font-size:11px;font-weight:600}
+.plate span b{display:inline;font-size:inherit;text-shadow:none}
+.plate .tt{color:#a30d1d}
+.bar{background:#e0a100;height:4px}
+.wl{display:block;margin:4px -12px -6px;padding:2px 0;font:800 12px system-ui;font-style:normal;letter-spacing:.1em;text-transform:uppercase;color:#fff}
+.wl.win{background:linear-gradient(#1f8f3c,#0e5a22)}.wl.lose{background:linear-gradient(#c0322a,#7e1510)}
+/* globos de diálogo bajo la placa (no se cortan) */
+.seat .bubble,.seat .bubble.talk{position:absolute;top:100%;bottom:auto;left:50%;transform:translateX(-50%);margin:8px 0 0;width:max-content;max-width:170px;white-space:normal;overflow:visible;text-overflow:clip;text-align:center;line-height:1.25;font:600 11.5px system-ui;padding:6px 10px;background:#fffaf0;color:#2a1a30;border-radius:12px;box-shadow:0 3px 10px rgba(0,0,0,.5);z-index:6;animation:bpop .3s}
+.seat .bubble::before{content:"";position:absolute;left:50%;top:-5px;margin-left:-5px;border:5px solid transparent;border-top:0;border-bottom-color:#fffaf0}
+.seat .bubble.talk::after{display:none}
+@keyframes bpop{from{opacity:0;transform:translateX(-50%) scale(.6)}}
+.hero{margin-top:-52px}
+/* manos bajadas sobre el fieltro */
+.table .m{border:0;background:none;box-shadow:none;filter:drop-shadow(0 2px 3px rgba(0,0,0,.5))}
+.table .m.st{outline:2px solid #ffd640;outline-offset:2px;border-radius:6px}
+/* el brillo de los mazos solo rodea la carta */
+.pile.can,.pile.src{animation:none}
+.pile.can .c::after,.pile.src .c::after{content:"";position:absolute;inset:-4px;border-radius:10px;border:2px solid #ffd54a;box-shadow:0 0 12px #ffd54a;animation:glowb 1.2s infinite;pointer-events:none}
+@keyframes glowb{50%{opacity:.3}}
+/* pintas más chicas y índice del 10 compacto para que no se mezclen */
+.c .pp{font-size:1.05em}
+.c .ix{font-size:.92em}
+.c .ix.t10{font-size:.74em;letter-spacing:-.08em}
+.c .ix.t10 i{font-size:1.15em}
+/* alturas bajas */
+@media(max-height:760px){
+ .av{width:62px;height:62px}.plate{margin-top:-22px;padding:16px 10px 5px;min-width:112px}
+ .table{padding:8px 10px 40px}.hero{margin-top:-42px}
+ .seat .bubble,.seat .bubble.talk{font-size:10.5px;padding:5px 8px;max-width:150px;margin-top:6px}
+}
+@media(max-height:720px){.tray{display:none}}
+@media(max-height:620px){.av{width:50px;height:50px}.plate{margin-top:-17px;padding:12px 8px 4px}.hero{margin-top:-34px}.table{padding-bottom:34px}}

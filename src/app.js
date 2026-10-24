@@ -1,7 +1,7 @@
 import {botPlay,deckDraw} from './bots.js';
 import {SU,RK,pts,CON,desc,shuf,mkDeck,classify,meets,gen,solve,rm,sides,put} from './engine.js';
 import {unlock,play,setMuted,isMuted} from './audio.js';
-import {AV_ME,AV_ANA,AV_BETO} from './avatars.js';
+import {AV_ME,BU_ME,BU_ANA,BU_BETO} from './avatars.js';
 import {phrase} from './lines.js';
 const NM=['Tú','Ana','Beto'];
 const sleep=t=>new Promise(r=>setTimeout(r,t));
@@ -10,7 +10,7 @@ const reqOf=()=>[...CON[G.round]].sort((a,b)=>b-a);
 const log=t=>{G.log.unshift(t);G.log=G.log.slice(0,4)};
 const drawDeck=()=>deckDraw(G);
 function start(){const d=mkDeck();G.hands=[0,1,2].map(()=>d.splice(0,12));G.deck=d;G.disc=[d.pop()];
- G.down=[0,0,0];G.taken=[[],[],[]];G.reshuf=0;G.justDown=0;G.melds=[[],[],[]];G.staged=[];G.sel=new Set();G.phase='draw';G.log=[];G.dealAnim=1;play('deal');G.peek=0;G.showScore=0;G.msg='Tu turno: roba del mazo o del descarte.';
+ G.down=[0,0,0];G.taken=[[],[],[]];G.reshuf=0;G.justDown=0;G.melds=[[],[],[]];G.staged=[];G.sel=new Set();G.phase='draw';G.log=[];G.dealAnim=1;G.win=null;play('deal');G.peek=0;G.showScore=0;G.msg='Tu turno: roba del mazo o del descarte.';
  const st=G.round%3;if(st){G.phase='bots';G.turn=(st+2)%3;G.msg='';render();advance()}else{startTurn();render()}}
 async function advance(){stopTurn();G.phase='bots';G.turn=(G.turn+1)%3;
  while(G.turn!=0){const p=G.turn;G.thinking=true;G.say=phrase(G,p);G.thinkStart=Date.now();render();await sleep(THINK);G.thinking=false;
@@ -21,7 +21,7 @@ async function advance(){stopTurn();G.phase='bots';G.turn=(G.turn+1)%3;
 function attach(p,c){for(const pl of G.melds)for(const m of pl){const s=sides(m,c);if(s.length){put(m,c,s[0]);return true}}return false}
 function botMove(p){const r=botPlay(G,p,(q,m,c)=>log(NM[q]+' '+m+(c?' '+cn(c):'')));if(r.out){if(r.discard)G.dropId=r.discard.id;endRound(p)}return r}
 const attachTry=c=>attach(0,c);
-function endRound(w){stopTurn();const row=G.hands.map(h=>h.reduce((a,c)=>a+pts(c.r),0));G.scores.push(row);G.phase='roundEnd';if(G.round==9)finish();if(w==0)play('win');else if(w>0)play('lose');
+function endRound(w){stopTurn();const row=G.hands.map(h=>h.reduce((a,c)=>a+pts(c.r),0));G.scores.push(row);G.phase='roundEnd';G.win=w;if(G.round==9)finish();if(w==0)play('win');else if(w>0)play('lose');
  G.msg=w<0?'Se acabó el mazo: nadie salió. Se cuentan las cartas en mano.':NM[w]+(w?' se queda':' te quedas')+' sin cartas y gana la ronda.';render()}
 const cn=c=>c.r?RK[c.r]+SU[c.s]:'🃏';
 const me=()=>G.phase=='play'&&G.turn==0;
@@ -51,11 +51,11 @@ function descartar(){if(!me())return;if(G.staged.length){G.msg='Tienes combinaci
  play('discard');G.hands[0]=rm(G.hands[0],p);G.disc.push(p[0]);G.dropId=p[0].id;G.justDown=0;G.sel=new Set();if(!G.hands[0].length)return endRound(0);if(G.reshuf>=2)return endRound(-1);advance()}
 function next(){if(G.round==9){G={round:0,scores:[],sort:true,log:[]};}else G.round++;start()}
 // Disposición clásica de las pintas (x, y en %) como en un mazo Bicycle
-const PIPS={2:[[50,22],[50,78]],3:[[50,22],[50,50],[50,78]],4:[[30,22],[70,22],[30,78],[70,78]],5:[[30,22],[70,22],[50,50],[30,78],[70,78]],6:[[30,22],[70,22],[30,50],[70,50],[30,78],[70,78]],7:[[30,22],[70,22],[50,36],[30,50],[70,50],[30,78],[70,78]],8:[[30,22],[70,22],[50,36],[30,50],[70,50],[50,64],[30,78],[70,78]],9:[[30,20],[70,20],[30,40],[70,40],[50,50],[30,60],[70,60],[30,80],[70,80]],10:[[30,20],[70,20],[50,30],[30,40],[70,40],[30,60],[70,60],[50,70],[30,80],[70,80]]};
+const PIPS={2:[[50,22],[50,78]],3:[[50,22],[50,50],[50,78]],4:[[36,22],[64,22],[36,78],[64,78]],5:[[36,22],[64,22],[50,50],[36,78],[64,78]],6:[[36,22],[64,22],[36,50],[64,50],[36,78],[64,78]],7:[[36,22],[64,22],[50,36],[36,50],[64,50],[36,78],[64,78]],8:[[36,22],[64,22],[50,36],[36,50],[64,50],[50,64],[36,78],[64,78]],9:[[36,22],[64,22],[36,40],[64,40],[50,50],[36,60],[64,60],[36,78],[64,78]],10:[[36,22],[64,22],[50,30],[36,40],[64,40],[36,60],[64,60],[50,70],[36,78],[64,78]]};
 const pipsOf=(r,s)=>r==1?`<span class="big">${s}</span>`:r>=11?`<span class="fc"><b>${RK[r]}</b><u>${s}</u></span>`:(PIPS[r]||[]).map(([x,y])=>`<span class="pp${y>50?' f':''}" style="left:${x}%;top:${y}%">${s}</span>`).join('');
 const card=(c,x='',d=0)=>{const r=RK[c.r],s=SU[c.s],cl=x.split(' '),sm=cl.includes('sm'),label=c.r?`${r} de ${({'♠':'picas','♥':'corazones','♦':'diamantes','♣':'tréboles'})[s]}`:'comodín';
  const inner=sm?(c.r?`<span class="t">${r}<br>${s}</span><span class="ct">${s}</span><span class="t b">${r}<br>${s}</span>`:`<span class="ct">🃏</span>`)
-  :(c.r?`<span class="ix">${r}<i>${s}</i></span>${pipsOf(c.r,s)}<span class="ix b">${r}<i>${s}</i></span>`:`<span class="jk"><b>★</b><u>JOKER</u></span>`);
+  :(c.r?`<span class="ix${c.r==10?' t10':''}">${r}<i>${s}</i></span>${pipsOf(c.r,s)}<span class="ix b${c.r==10?' t10':''}">${r}<i>${s}</i></span>`:`<span class="jk"><b>★</b><u>JOKER</u></span>`);
  return `<button type="button" class="c k${c.s} ${x}" data-id="${c.id}" aria-label="${label}" aria-pressed="${cl.includes('s')}"${d?` style="animation-delay:${d}ms"`:''}>${inner}</button>`};
 const small=c=>card(c,'sm').replace('<button','<span').replace('</button>','</span>');
 const mel=(p,list)=>list.map((m,i)=>`<div class="m" onclick="pegar(${p},${i})">${m.cs.map(small).join('')}</div>`).join('');
@@ -88,7 +88,9 @@ setInterval(()=>{const e=document.getElementById('tt');if(e&&G.turnStart&&!G.sho
 const tots=()=>[0,1,2].map(i=>G.scores.reduce((a,r)=>a+r[i],0));
 function plate(p){const tm=p==0&&TURN>0&&G.turnStart&&inTurn(),el=G.showScore&&G.left!=null?TURN-G.left:Date.now()-G.turnStart,secs=Math.max(0,Math.ceil((TURN-el)/1000)),tot=tots()[p],act=p?(G.phase=='bots'&&G.turn==p):(G.phase=='draw'||G.phase=='play'),dealer=(G.round+2)%3==p,
  say=p?(G.log.find(l=>l.startsWith(NM[p]))||'').slice(NM[p].length+1):'';
- return `<div class="seat">${p?`<div class="slot">${act&&G.thinking?`<div class="bubble talk">${G.say||''}<span class="dots"><i></i><i></i><i></i></span></div>`:say?`<div class="bubble">${say}</div>`:''}</div>`:''}<div class="av ${act?'act':''} ${p&&act&&G.thinking?'th':''}" style="--ac2:${COL[p]}">${AVT()[p]}${dealer?'<i class="dlr">D</i>':''}</div><div class="plate"><b>${NM[p]}</b><span>${G.hands[p].length} cartas · ${tot} pts${tm?` · <b class="tt" id="tt">${secs}</b> s`:''}</span>${p&&act&&G.thinking?`<u class="bar" style="animation:tbar ${THINK}ms linear forwards;animation-delay:-${Date.now()-G.thinkStart}ms"></u>`:''}${tm?`<u class="bar" style="animation:tbar ${TURN}ms linear forwards,tcol ${TURN}ms linear forwards;animation-delay:-${el}ms,-${el}ms"></u>`:''}</div></div>`}
+ const wl=G.phase=='roundEnd'&&G.win!=null&&G.win>=0?`<em class="wl ${G.win==p?'win':'lose'}">${G.win==p?'Gana':'Pierde'}</em>`:'';
+ const bub=p?(act&&G.thinking?`<div class="bubble talk">${G.say||''}<span class="dots"><i></i><i></i><i></i></span></div>`:say?`<div class="bubble say">${say}</div>`:''):'';
+ return `<div class="seat"><div class="av ${act?'turn':''} ${p&&act&&G.thinking?'th':''}" style="--ac2:${COL[p]}">${AVT()[p]}${dealer?'<i class="dlr">D</i>':''}</div>${bub}<div class="plate"><b>${NM[p]}</b><span>${G.hands[p].length} cartas · ${tot} pts${tm?` · <b class="tt" id="tt">${secs}</b> s`:''}</span>${wl}${p&&act&&G.thinking?`<u class="bar" style="animation:tbar ${THINK}ms linear forwards;animation-delay:-${Date.now()-G.thinkStart}ms"></u>`:''}${tm?`<u class="bar" style="animation:tbar ${TURN}ms linear forwards,tcol ${TURN}ms linear forwards;animation-delay:-${el}ms,-${el}ms"></u>`:''}</div></div>`}
 function peek(){G.peek=1;G.showScore=0;render()}
 // FLIP: guarda dónde estaban las cartas de la mano para que se deslicen suavemente a su nuevo sitio
 function flipBefore(){const m=new Map();if(G.flip)document.querySelectorAll('#hand .c').forEach(el=>m.set(el.dataset.id,el.getBoundingClientRect()));G.flip=0;return m}
@@ -108,7 +110,7 @@ function render(){
  const bar=end?btn('go','next',fin?'Jugar de nuevo':'Siguiente ronda',1):btn('gh','deshacer','Deshacer',mine&&G.staged.length)+btn('blue','armar','Armar',mine&&!G.down[0])+btn('go','bajar','Bajarme',mine&&!G.down[0])+btn('red','descartar','Descartar',mine);
  const modal=G.showScore||(end&&!G.peek)?`<div class="modal"><div class="sheet"><h3>${fin?(tot.filter(x=>x===Math.min(...tot)).length>1?'Fin del juego · empate': 'Fin del juego · gana '+NM[tot.indexOf(Math.min(...tot))]):end?G.msg:'Puntaje'}</h3>${t}${statsBox()}${turnChips()}${thinkChips()}<div class="row">${end?btn('go','next',fin?'Jugar de nuevo':'Siguiente ronda',1)+`<button class="chip" onclick="peek()">Ver mesa</button>`:`<button class="act go" onclick="toggleScore()">Cerrar</button>`}</div></div></div>`:'';
  document.getElementById('app').innerHTML=`<div class="hud"><button class="rbtn" onclick="toggleScore()" aria-label="Puntaje">☰</button><div class="contract"><small>Ronda ${G.round+1} de 10</small><b>${desc(CON[G.round])}${hint}</b></div><button class="rbtn" onclick="toggleSound()" aria-label="${isMuted()?'Activar sonido':'Silenciar'}">${isMuted()?'🔇':'🔊'}</button></div>
- <div class="table">${G.fly?flyEl():''}${G.note?toast():''}<div class="seats">${plate(1)}${plate(2)}</div>
+ <div class="table">${G.fly?flyEl():''}${G.note?toast():''}<div class="tray" aria-hidden="true">${['#7c4dff','#2f80ed','#e0559a','#9aa0a6','#6a2fc4','#f2b21c','#2f6fd0','#d62f2f'].map(c=>`<i style="--c:${c}"></i>`).join('')}</div><div class="seats">${plate(1)}${plate(2)}</div>
  <div class="melds2">${[1,2].map(p=>`<div class="mz">${mel(p,G.melds[p])}</div>`).join('')}</div>
  <div class="center"><div class="piles"><div class="pile ${can?'can':''} ${G.note&&G.note.kind=='deck'?'src':''}" onclick="take(1)"><div class="c back"><span class="cnt">${G.vis?G.vis.deck:G.deck.length}</span></div><small>MAZO</small></div><div class="pile ${can?'can':''} ${G.note&&G.note.kind=='disc'?'src':''}" onclick="take(0)">${top?card(top,G.dropId==top.id?'drop':''):'<div class="c"></div>'}<small>DESCARTE</small></div></div><div class="msgpill">${G.msg||G.log[0]||'…'}</div></div>
  <div class="mine"><div class="mz">${mel(0,G.melds[0])}${G.staged.map(m=>`<div class="m st">${m.cs.map(small).join('')}</div>`).join('')}</div></div></div>
@@ -120,7 +122,7 @@ function render(){
 
 function ordenar(m){G.flip=1;play('flip');G.hands[0].sort((a,b)=>!a.r-!b.r||(m=='p'?a.s-b.s||a.r-b.r:a.r-b.r||a.s-b.s));render()}
 let ME=(()=>{try{return localStorage.getItem('carioca:me')=='1'?1:0}catch(e){return 0}})();
-const AVT=()=>[AV_ME[ME],AV_ANA,AV_BETO],COL=['#3aa0ff','#e0709a','#e69a3c'];
+const AVT=()=>[BU_ME[ME],BU_ANA,BU_BETO],COL=['#3aa0ff','#e0709a','#e69a3c'];
 function toggleSound(){unlock();setMuted(!isMuted());play('click');if(G.hands)render()}
 function setupDrag(){document.querySelectorAll('#hand .c').forEach(el=>{el.style.touchAction='none';
  el.onpointerdown=e=>{const id=+el.dataset.id,x0=e.clientX,y0=e.clientY;let drag=false,lx=x0,lt=performance.now(),rot=0;el.setPointerCapture(e.pointerId);
