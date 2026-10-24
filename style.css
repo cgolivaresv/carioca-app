@@ -423,3 +423,7 @@ body{-webkit-text-size-adjust:100%;-webkit-user-select:none;user-select:none}
 .melds2{margin-top:4px}
 .stk{margin:2px 6px 4px}
 .msgpill{padding:3px 12px;font-size:12px}
+
+/* esquinas inferiores menos cerradas para no cortar mis combinaciones */
+.table{border-radius:20px 20px 30% 30%/20px 20px 4% 4%}
+.mine{padding-bottom:6px}
