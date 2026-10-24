@@ -520,3 +520,6 @@ body{-webkit-text-size-adjust:100%;-webkit-user-select:none;user-select:none}
  .menu{gap:7px}
  .seat .plate{padding:6px 10px;min-width:100px}
 }
+
+/* anula la regla antigua de pantallas bajas que dejaba a los rivales en 34 px */
+.seats .av{width:auto;height:var(--avh)}
