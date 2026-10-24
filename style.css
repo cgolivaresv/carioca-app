@@ -417,3 +417,9 @@ body{-webkit-text-size-adjust:100%;-webkit-user-select:none;user-select:none}
 .stk .c.back{box-shadow:inset 0 0 0 2px #a0121a,inset 0 0 0 3px rgba(255,255,255,.6),0 0 0 2px rgba(255,213,74,.55),0 0 16px rgba(255,213,74,.4)}
 .pile small{color:#f3e6b8;font-weight:600}
 .pile.can small{color:#ffd54a}
+
+/* ajuste: dos combinaciones por rival en una sola fila y menos altura en el centro */
+.table .m{padding:0}
+.melds2{margin-top:4px}
+.stk{margin:2px 6px 4px}
+.msgpill{padding:3px 12px;font-size:12px}
