@@ -1,5 +1,5 @@
 // Jugadores virtuales: nombre, género, aspecto y niveles de dificultad.
-import {makeBust} from './avatars.js';
+import {makeBust,makeRound} from './avatars.js';
 // err: probabilidad de jugar mal (descartar al azar, no tomar una carta útil) · lazy: probabilidad de no bajarse aunque pueda
 export const LEVELS={
  'Fácil':{danger:1,spec:.4,err:.35,lazy:.35},
@@ -25,10 +25,11 @@ export const ROSTER=[
  M('Andrés',{skin:'#d9a58a',shade:'#bd8a6f',hair:'#b9bcc2',jacket:'#111116',beard:true}),
  M('Rafael',{skin:'#c98a64',shade:'#ad7050',hair:'#2a1a12',jacket:'#0f3d3a',beard:true,shades:true})
 ];
-const cache=[];
+const cache=[],rcache=[];
 export const bustOf=i=>cache[i]||(cache[i]=makeBust(ROSTER[i].g,{...ROSTER[i].o,id:'r'+i}));
+export const roundOf=i=>rcache[i]||(rcache[i]=makeRound(ROSTER[i].g,{...ROSTER[i].o,id:'p'+i}));
 const shuffle=a=>{for(let i=a.length-1;i>0;i--){const j=Math.random()*(i+1)|0;[a[i],a[j]]=[a[j],a[i]]}return a};
-// Elige 2 jugadores distintos al azar; con 'Aleatoria' cada uno recibe un nivel distinto al azar
-export function pickBots(level){
- const ids=shuffle(ROSTER.map((_,i)=>i)).slice(0,2),lv=()=>level==='Aleatoria'||!LEVELS[level]?LEVEL_NAMES[Math.random()*LEVEL_NAMES.length|0]:level;
+// Elige 2 jugadores al azar (distintos entre sí y del avatar del jugador); con 'Aleatoria' cada uno recibe un nivel distinto al azar
+export function pickBots(level,exclude=-1){
+ const ids=shuffle(ROSTER.map((_,i)=>i).filter(i=>i!==exclude)).slice(0,2),lv=()=>level==='Aleatoria'||!LEVELS[level]?LEVEL_NAMES[Math.random()*LEVEL_NAMES.length|0]:level;
  return [null,{id:ids[0],lvl:lv()},{id:ids[1],lvl:lv()}]}
