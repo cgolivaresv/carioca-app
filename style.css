@@ -336,3 +336,11 @@ body{-webkit-text-size-adjust:100%;-webkit-user-select:none;user-select:none}
 .act{flex:1 1 0;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:clip;font-size:clamp(9.5px,2.9vw,12.5px);letter-spacing:.06em}
 .bar2{padding-left:2px;padding-right:2px}
 .act{font-size:clamp(9px,2.5vw,12.5px);letter-spacing:.03em;padding:0}
+
+/* cartas de la mesa más grandes: manos bajadas y mazos */
+.c.sm{width:40px;height:58px;border-radius:6px}
+.c.sm .t{font-size:11px;top:3px;left:4px}
+.c.sm .ct{font-size:22px;padding-top:12px}
+.m .c+.c{margin-left:-14px}
+.pile .c{width:54px;height:78px;font-size:14px}
+.toast .c.sm{width:24px;height:34px}
