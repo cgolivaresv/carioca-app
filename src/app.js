@@ -95,6 +95,9 @@ function flipBefore(){const m=new Map();if(G.flip)document.querySelectorAll('#ha
 function flipAfter(m){if(!m.size)return;document.querySelectorAll('#hand .c').forEach(el=>{const o=m.get(el.dataset.id);if(!o)return;const n=el.getBoundingClientRect(),dx=o.left-n.left,dy=o.top-n.top;
  if(Math.abs(dx)<1&&Math.abs(dy)<1)return;el.style.transition='none';el.style.transform=`translate(${dx}px,${dy}px)`;el.getBoundingClientRect();
  el.style.transition='transform .34s cubic-bezier(.2,.8,.25,1)';el.style.transform='';setTimeout(()=>{el.style.transition=''},380)})}
+// Ajusta el solapamiento de la mano midiendo el ancho real de las cartas y del contenedor
+function fitHand(){const hd=document.getElementById('hand');if(!hd)return;const cs=hd.children,n=cs.length;if(n<2)return;
+ const cw=cs[0].offsetWidth,avail=hd.clientWidth-4;hd.style.setProperty('--ov',Math.min(cw-14,Math.max(0,(n*cw-avail)/(n-1))).toFixed(1)+'px')}
 function render(){
  const flipPrev=flipBefore();
  const h=G.hands[0],tot=tots(),end=G.phase=='roundEnd',fin=end&&G.round==9,top=G.vis?G.vis.top:G.disc[G.disc.length-1],can=G.phase=='draw',mine=me();
@@ -113,7 +116,7 @@ function render(){
  <div id="hand" class="hand" style="--ov:${ov}px">${h.map((c,i)=>card(c,(G.sel.has(c.id)?'s ':'')+(G.dealAnim||G.fresh&&G.fresh.has(c.id)?'deal':''),G.dealAnim?i*50:0)).join('')}</div>
  <div class="tools"><button class="chip" onclick="ordenar('p')">♠ Por palo</button><button class="chip" onclick="ordenar('n')">A Por número</button></div>
  <div class="bar2">${bar}</div>${modal}`;
- setupDrag();flipAfter(flipPrev);persist();G.dealAnim=0;G.fresh=null;G.dropId=null;G.fly=null}
+ fitHand();setupDrag();flipAfter(flipPrev);persist();G.dealAnim=0;G.fresh=null;G.dropId=null;G.fly=null}
 
 function ordenar(m){G.flip=1;play('flip');G.hands[0].sort((a,b)=>!a.r-!b.r||(m=='p'?a.s-b.s||a.r-b.r:a.r-b.r||a.s-b.s));render()}
 let ME=(()=>{try{return localStorage.getItem('carioca:me')=='1'?1:0}catch(e){return 0}})();
