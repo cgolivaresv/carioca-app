@@ -335,3 +335,4 @@ body{-webkit-text-size-adjust:100%;-webkit-user-select:none;user-select:none}
 /* los cuatro botones siempre caben y miden lo mismo */
 .act{flex:1 1 0;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:clip;font-size:clamp(9.5px,2.9vw,12.5px);letter-spacing:.06em}
 .bar2{padding-left:2px;padding-right:2px}
+.act{font-size:clamp(9px,2.5vw,12.5px);letter-spacing:.03em;padding:0}
