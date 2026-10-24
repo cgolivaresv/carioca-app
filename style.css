@@ -545,3 +545,7 @@ body{-webkit-text-size-adjust:100%;-webkit-user-select:none;user-select:none}
  .plate{margin-top:calc(var(--avh) * -.22)}
  .av img.avimg{max-width:calc(var(--avh) * 1.5)}
 }
+
+/* confirmación para salir de la partida */
+.col{display:flex;flex-direction:column;gap:8px;margin-top:14px}
+.col .act{flex:none;width:100%;height:46px;font-size:13px;letter-spacing:.1em}
