@@ -364,3 +364,16 @@ body{-webkit-text-size-adjust:100%;-webkit-user-select:none;user-select:none}
 .mz.dense .m .c+.c{margin-left:-12px}
 @media(max-height:760px){.seats{margin-top:40px}.av{width:62px;height:62px}}
 @media(max-height:620px){.seats{margin-top:36px}.av{width:50px;height:50px}}
+
+/* ===== v8: ajuste fino de alturas para que quepan las combinaciones ===== */
+.av{width:62px;height:62px}
+.seats{margin-top:42px}
+.table{padding-top:8px;padding-bottom:12px}
+.piles{zoom:.9}
+.mz.dense .c.sm{width:30px;height:44px}
+.mz.dense .c.sm .t{font-size:9px;top:2px;left:3px}
+.mz.dense .c.sm .ct{font-size:16px;padding-top:9px}
+.mz.dense .m .c+.c{margin-left:-11px}
+.mz.dense{min-height:44px}
+@media(max-height:760px){.av{width:56px;height:56px}.seats{margin-top:38px}.table{padding-bottom:10px}}
+@media(max-height:620px){.av{width:46px;height:46px}.seats{margin-top:34px}.table{padding-bottom:8px}}
