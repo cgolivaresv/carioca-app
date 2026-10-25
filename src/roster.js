@@ -50,7 +50,7 @@ export const roundOf=i=>{const r=ROSTER[i];return pic(r.portraitWebp,r.portrait,
 export const fallbackBust=i=>makeBust(ROSTER[i].g,{...ROSTER[i].fb,id:'fb'+i});
 export const fallbackRound=i=>makeRound(ROSTER[i].g,{...ROSTER[i].fb,id:'fr'+i});
 const shuffle=a=>{for(let i=a.length-1;i>0;i--){const j=Math.random()*(i+1)|0;[a[i],a[j]]=[a[j],a[i]]}return a};
-// Elige 2 jugadores al azar (distintos entre sí y del avatar del jugador); con 'Aleatoria' cada uno recibe un nivel distinto al azar
-export function pickBots(level,exclude=-1){
- const ids=shuffle(ROSTER.map((_,i)=>i).filter(i=>i!==exclude)).slice(0,2),lv=()=>level==='Aleatoria'||!LEVELS[level]?LEVEL_NAMES[Math.random()*LEVEL_NAMES.length|0]:level;
- return [null,{id:ids[0],lvl:lv()},{id:ids[1],lvl:lv()}]}
+// Elige `count` rivales (1 a 4) al azar, distintos entre sí y del avatar del jugador; con 'Aleatoria' cada uno recibe un nivel al azar
+export function pickBots(level,exclude=-1,count=2){
+ const ids=shuffle(ROSTER.map((_,i)=>i).filter(i=>i!==exclude)).slice(0,Math.max(1,Math.min(4,count|0))),lv=()=>level==='Aleatoria'||!LEVELS[level]?LEVEL_NAMES[Math.random()*LEVEL_NAMES.length|0]:level;
+ return [null,...ids.map(id=>({id,lvl:lv()}))]}
