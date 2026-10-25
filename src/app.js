@@ -4,9 +4,11 @@ import {unlock,play,setMuted,isMuted} from './audio.js';
 import {JOKER} from './joker.js';
 import {ROSTER,LEVELS,bustOf,roundOf,pickBots,fallbackBust,fallbackRound} from './roster.js';
 import {phrase} from './lines.js';
+import {esc,validSave} from './safe.js';
+// Los nombres se escapan al asignarlos: NM se inserta en innerHTML en toda la pantalla
 const NM=['Tú','Ana','Beto'];
 // Fija los dos rivales de la partida (G.bots guarda solo el id del roster y el nivel)
-function setMe(){NM[0]=PN;G.meId=ME;G.meName=PN}
+function setMe(){NM[0]=esc(PN);G.meId=ME;G.meName=PN}
 function setBots(bs){G.bots=bs;NM[1]=ROSTER[bs[1].id].name;NM[2]=ROSTER[bs[2].id].name}
 const sleep=t=>new Promise(r=>setTimeout(r,t));
 let SESSION=0,openHome=()=>{};
@@ -16,10 +18,10 @@ const log=t=>{G.log.unshift(t);G.log=G.log.slice(0,4)};
 const drawDeck=()=>deckDraw(G);
 function start(){const d=mkDeck();G.hands=[0,1,2].map(()=>d.splice(0,12));G.deck=d;G.disc=[d.pop()];
  G.down=[0,0,0];G.taken=[[],[],[]];G.reshuf=0;G.justDown=0;G.melds=[[],[],[]];G.staged=[];G.sel=new Set();G.phase='draw';G.log=[];G.dealAnim=1;G.win=null;play('deal');G.peek=0;G.showScore=0;G.msg='Tu turno: roba del mazo o del descarte.';
- const st=G.round%3;if(st){G.phase='bots';G.turn=(st+2)%3;G.msg='';render();advance()}else{startTurn();render()}}
+ const st=G.round%3;if(st){G.phase='bots';G.turn=(st+2)%3;G.pend=st;G.msg='';render();advance()}else{startTurn();render()}}
 async function advance(){const my=SESSION;stopTurn();G.phase='bots';G.turn=(G.turn+1)%3;
- while(G.turn!=0){const p=G.turn;G.thinking=true;G.say=phrase(G,p);G.thinkStart=Date.now();render();await sleep(THINK);if(my!=SESSION)return;G.thinking=false;
-  const top0=G.disc[G.disc.length-1],dk0=G.deck.length,r=botMove(p);if(G.phase=='roundEnd')return;if(G.reshuf>=2){endRound(-1);return}
+ while(G.turn!=0){const p=G.turn;G.pend=p;G.thinking=true;G.say=phrase(G,p);G.thinkStart=Date.now();render();await sleep(THINK);if(my!=SESSION)return;G.thinking=false;
+  const top0=G.disc[G.disc.length-1],dk0=G.deck.length,r=botMove(p);G.pend=(p+1)%3;if(G.phase=='roundEnd')return;if(!r.drew||G.reshuf>=2){endRound(-1);return}
   G.vis={top:top0,deck:dk0};G.note={p,kind:r.drew,card:r.drewCard};G.fly={p,src:r.drew,card:r.drewCard};play(r.drew=='disc'?'flip':'draw');render();await sleep(1300);if(my!=SESSION)return;
   G.vis=null;G.dropId=r.discard&&r.discard.id;G.note=r.laid?{p,kind:'lay'}:null;if(r.laid)play('down');setTimeout(()=>play('discard'),r.laid?450:0);render();await sleep(1300);if(my!=SESSION)return;G.turn=(G.turn+1)%3}
  G.note=null;G.phase='draw';G.msg='Tu turno: roba del mazo o del descarte.';startTurn();play('turn');render()}
@@ -31,7 +33,8 @@ function endRound(w){stopTurn();const row=G.hands.map(h=>h.reduce((a,c)=>a+pts(c
 const cn=c=>c.r?RK[c.r]+SU[c.s]:'🃏';
 const me=()=>G.phase=='play'&&G.turn==0;
 function sel(id){if(!me())return;play('select');G.choose=null;G.sel.has(id)?G.sel.delete(id):G.sel.add(id);render()}
-function take(deck){if(G.phase!='draw')return;unlock();play(deck?'draw':'flip');const c=deck?drawDeck():G.disc.pop();if(!deck)G.taken[0].push(c);G.drawn=c.id;G.justDown=0;G.hands[0].push(c);G.fresh=new Set([c.id]);G.phase='play';G.turn=0;G.msg='Arma combinaciones, pega cartas o descarta una.';render()}
+function take(deck){if(G.phase!='draw')return;unlock();play(deck?'draw':'flip');const c=deck?drawDeck():G.disc.pop();if(!c){endRound(-1);return} // mazo y descarte agotados
+ if(!deck)G.taken[0].push(c);G.drawn=c.id;G.justDown=0;G.hands[0].push(c);G.fresh=new Set([c.id]);G.phase='play';G.turn=0;G.msg='Arma combinaciones, pega cartas o descarta una.';render()}
 const picked=()=>G.hands[0].filter(c=>G.sel.has(c.id));
 function armar(){if(!me()||G.down[0])return;const m=classify(picked());
  if(!m){play('error');G.msg='Inválida: trío = mismo número (3+); escala = mismo palo consecutivo (4+); comodines menos que naturales.';return render()}
@@ -78,6 +81,7 @@ function stopTurn(){clearTimeout(tt);G.turnStart=null}
 // Tiempo agotado: roba del mazo si no había robado, devuelve las combinaciones sin bajar y descarta (la carta robada o la de más puntos)
 function timeUp(){if(!inTurn()||G.showScore)return;
  if(G.phase=='draw')take(1);
+ if(!inTurn())return; // take() pudo terminar la ronda (mazo agotado)
  if(G.staged.length)deshacer();
  const h=G.hands[0];let w=h.find(c=>c.id==G.drawn);
  if(!w||(!w.r&&h.length>1))w=[...h].filter(c=>c.r).sort((x,y)=>pts(y.r)-pts(x.r))[0]||h[0];
@@ -148,20 +152,24 @@ function setupDrag(){document.querySelectorAll('#hand .c').forEach(el=>{el.style
 function cancelar(){G.choose=null;render()}
 // ---- Guardado y estadísticas (en este dispositivo) ----
 const SAVE='carioca:save',STATS='carioca:stats',EMPTY=()=>({played:0,won:0,best:null,last:[]});
+// También se guarda durante el turno de los bots (G.pend = qué jugador mueve a continuación), para no perder jugadas al salir
 function persist(){try{if(G.phase=='roundEnd'&&G.round==9)localStorage.removeItem(SAVE);
- else if(['draw','play','roundEnd'].includes(G.phase)){const{sel,fresh,...rest}=G;localStorage.setItem(SAVE,JSON.stringify({...rest,v:1}))}}catch(e){}}
-function restore(){try{const s=JSON.parse(localStorage.getItem(SAVE));if(s&&s.v==1&&s.hands){G=Object.assign({sort:true,log:[]},s);G.taken=G.taken||[[],[],[]];G.reshuf=G.reshuf||0;G.sel=new Set();G.fresh=null;G.dealAnim=0;G.dropId=null;G.confirmExit=0;G.showScore=0;
-  setBots(G.bots&&G.bots[1]&&ROSTER[G.bots[1].id]&&G.bots[2]&&ROSTER[G.bots[2].id]?G.bots:[null,{id:0,lvl:'Normal'},{id:6,lvl:'Normal'}]);if(G.meId!=null&&ROSTER[G.meId])ME=G.meId;NM[0]=G.meName||'Tú';return true}}catch(e){}return false}
+ else if(['draw','play','roundEnd','bots'].includes(G.phase)){const{sel,fresh,...rest}=G;localStorage.setItem(SAVE,JSON.stringify({...rest,v:1}))}}catch(e){}}
+const readSave=()=>{try{const s=JSON.parse(localStorage.getItem(SAVE));return validSave(s)?s:null}catch(e){return null}};
+function restore(){const s=readSave();if(!s)return false;
+ G=Object.assign({sort:true,log:[]},s);G.taken=G.taken||[[],[],[]];G.staged=G.staged||[];G.reshuf=G.reshuf||0;G.sel=new Set();G.fresh=null;G.dealAnim=0;G.dropId=null;G.confirmExit=0;G.showScore=0;
+ G.vis=null;G.note=null;G.fly=null;G.thinking=false;G.choose=null;
+ setBots(G.bots&&G.bots[1]&&ROSTER[G.bots[1].id]&&G.bots[2]&&ROSTER[G.bots[2].id]?G.bots:[null,{id:0,lvl:'Normal'},{id:6,lvl:'Normal'}]);if(G.meId!=null&&ROSTER[G.meId])ME=G.meId;NM[0]=esc(G.meName||'Tú');return true}
 function loadStats(){try{return Object.assign(EMPTY(),JSON.parse(localStorage.getItem(STATS)))}catch(e){return EMPTY()}}
 function finish(){if(G.statsDone)return;G.statsDone=1;const t=[0,1,2].map(i=>G.scores.reduce((x,r)=>x+r[i],0)),s=loadStats();
  s.played++;if(t[0]===Math.min(...t)&&t.filter(x=>x===t[0]).length===1)s.won++;s.best=s.best==null?t[0]:Math.min(s.best,t[0]);
  s.last=[{d:new Date().toISOString().slice(0,10),t,n:[NM[1],NM[2]]},...s.last].slice(0,5);try{localStorage.setItem(STATS,JSON.stringify(s))}catch(e){}}
-function statsBox(){const s=loadStats();return `<div class="box"><b>Estadísticas</b> <span class="mu">(guardadas en este dispositivo)</span><div>Partidas: ${s.played} · Ganadas: ${s.won} · Mejor puntaje: ${s.best==null?'—':s.best}</div>${s.last.map(g=>`<div class="mu">${g.d}: Tú ${g.t[0]} · ${(g.n||['Ana','Beto'])[0]} ${g.t[1]} · ${(g.n||['Ana','Beto'])[1]} ${g.t[2]}</div>`).join('')}</div>`}
+function statsBox(){const s=loadStats();return `<div class="box"><b>Estadísticas</b> <span class="mu">(guardadas en este dispositivo)</span><div>Partidas: ${s.played} · Ganadas: ${s.won} · Mejor puntaje: ${s.best==null?'—':s.best}</div>${s.last.map(g=>`<div class="mu">${esc(g.d)}: Tú ${esc(g.t[0])} · ${esc((g.n||['Ana','Beto'])[0])} ${esc(g.t[1])} · ${esc((g.n||['Ana','Beto'])[1])} ${esc(g.t[2])}</div>`).join('')}</div>`}
 // si una imagen de avatar no carga, se cambia por el avatar SVG de respaldo
 window.avFail=el=>{el.onerror=null;const i=+el.dataset.av;(el.closest('picture')||el).outerHTML=el.dataset.kind=='bust'?fallbackBust(i):fallbackRound(i)};
 Object.assign(window,{askExit,keepPlaying,exitMenu,abandon,sel,take,armar,deshacer,bajar,pegar,elegir,descartar,next,ordenar,cancelar,render,toggleScore,peek,setThink,setTurn,toggleSound});
 // ---- Pantalla de inicio ----
-const hasSave=()=>{try{const s=JSON.parse(localStorage.getItem(SAVE));return !!(s&&s.v==1&&s.hands)}catch(e){return false}};
+const hasSave=()=>!!readSave();
 function initHome(){const home=document.getElementById('home');if(!home)return newGame();
  const saved=hasSave(),$=s=>home.querySelector(s),cont=$('#bCont'),nw=$('#bNew'),snd=$('#bSnd'),pk=$('#picks'),nameIn=$('#pName');
  let menuTimer=0;const showMenu=()=>{clearTimeout(menuTimer);home.classList.add('menu-on')};
@@ -179,7 +187,11 @@ function initHome(){const home=document.getElementById('home');if(!home)return n
  pk.onclick=ev=>{const b=ev.target.closest('.pick');if(!b)return;ME=+b.dataset.me;try{localStorage.setItem('carioca:avatar',ME)}catch(e){}unlock();play('click');paintPicks()};
  snd.onclick=()=>{unlock();setMuted(!isMuted());play('click');sndLabel()};
  nw.onclick=()=>{unlock();play('click');saveName();leave();newGame()};
- cont.onclick=()=>{unlock();play('click');if(restore()){SESSION++;leave();startTurn();render()}else{leave();saveName();newGame()}}}
+ const fresh=()=>{try{localStorage.removeItem(SAVE)}catch(e){}leave();saveName();newGame()};
+ cont.onclick=()=>{unlock();play('click');
+  if(!restore())return fresh();
+  SESSION++;leave();
+  try{if(G.phase=='bots'){G.turn=(G.pend+2)%3;advance()}else{startTurn();render()}}catch(e){fresh()}}}
 function askExit(){G.confirmExit=1;render()}
 function keepPlaying(){G.confirmExit=0;render()}
 // guarda lo que se pueda y vuelve al menú principal

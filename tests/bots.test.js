@@ -13,6 +13,13 @@ test('más cartas útiles = mayor valor',()=>{
  const hid=()=>2,req=[0,0],a=[mk(4),mk(4,1),mk(9),mk(9,1),mk(2),mk(6,2)],b=[mk(4),mk(4,1),mk(4,2),mk(9),mk(9,1),mk(6,2)];
  assert.ok(value(b,req,hid)>value(a,req,hid))});
 test('el mazo se rebaraja y cuenta las veces',()=>{const S=estado(0,[]);S.deck=[];S.disc=[mk(1),mk(2),mk(3)];assert.ok(deckDraw(S));assert.equal(S.reshuf,1)});
+test('sin cartas para robar: deckDraw devuelve undefined y el bot no rompe el turno',()=>{
+ const S=estado(0,[mk(2),mk(4,1),mk(6,2),mk(8,3),mk(10),mk(12,1),mk(1,2),mk(3,3),mk(5),mk(7,1),mk(9,2),mk(11)]);
+ S.deck=[];S.disc=[mk(13)];
+ assert.equal(deckDraw({deck:[],disc:[mk(5)],reshuf:0}),undefined);
+ const r=botPlay(S,0,()=>{},{danger:5,spec:0});
+ assert.equal(!!r.drew,false); // la app lo usa para terminar la ronda
+ assert.equal(S.hands[0].length,12)});
 test('el bot no ve cartas ocultas: juega igual con cualquier mazo',()=>{
  const S=estado(0,[mk(3),mk(3,1),mk(9),mk(9,1),mk(1),mk(5,3),mk(7,2),mk(12),mk(13,1),mk(11,3),mk(2,2),mk(8)]);
  const n=S.hands[0].length;botPlay(S,0);assert.equal(S.hands[0].length,n)});
