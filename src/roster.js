@@ -11,7 +11,7 @@ export const LEVELS={
 };
 export const LEVEL_NAMES=Object.keys(LEVELS);
 export const DIFF_CHOICES=[...LEVEL_NAMES,'Aleatoria'];
-// Aspectos SVG de respaldo (6 femeninos y 6 masculinos, se reparten entre los 28)
+// Aspectos SVG de respaldo (6 femeninos y 6 masculinos, se reparten entre los 10)
 const bg={c1:'#444',c2:'#222'};
 const W=o=>({...bg,gem:'#e6c35c',...o}),M=o=>({...bg,beard:false,shades:false,...o});
 const FB_F=[
