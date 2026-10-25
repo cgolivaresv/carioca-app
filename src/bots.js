@@ -30,6 +30,22 @@ export function attachAll(ms,h){let ch=true;while(ch&&h.length){ch=false;
  for(const c of [...h].sort((a,b)=>!a.r-!b.r)){for(const m of ms){const s=sides(m,c);if(s.length){put(m,c,c.r?s[0]:s[Math.random()*s.length|0]);h=rm(h,[c]);ch=true;break}}if(ch)break}}return h}
 export function deckDraw(S){if(!S.deck.length){const t=S.disc.pop();S.deck=shuf(S.disc);S.disc=[t];S.reshuf=(S.reshuf||0)+1}return S.deck.pop()}
 function seenOf(S,h){const c=new Array(56).fill(0);for(const x of [...S.disc,...S.melds.flat().flatMap(m=>m.cs),...h])if(x.r)c[x.s*14+x.r]++;return c}
+// Cuánto "le cuesta decidir" al bot en este turno: 0 = jugada rutinaria, 1 = decisión difícil. No modifica el estado.
+// Sube cuando duda si tomar el descarte, cuando está a punto de bajarse o cuando ya puede hacerlo.
+export function effort(S,p){
+ const h=S.hands[p];if(S.down[p])return h.length<=3?.5:.2; // ya bajado: pegar y descartar es rápido; con pocas cartas piensa más
+ const req=[...CON[S.round]].sort((a,b)=>b-a),seen=seenOf(S,h),hid=(s,r)=>Math.max(0,2-seen[s*14+r]),top=S.disc[S.disc.length-1],v0=value(h,req,hid);
+ let e=.2;
+ if(top){const d=value([...h,top],req,hid)-v0;e+=d>=95?.15:d>=40?.3:0} // tomar el descarte cuesta más cuando es dudoso
+ const falta=need(req)-Math.floor(v0/100);
+ if(falta<=0)e+=.4;else if(falta<=2)e+=.25;
+ return Math.min(1,e)}
+// Cuánto espera el bot antes de jugar (ms). `max` es el tope elegido por el jugador: las jugadas fáciles salen antes
+// y, de vez en cuando (1 de cada 5 turnos), el bot "duda" y tarda el máximo para dar la sensación de que le cuesta decidir.
+export function thinkTime(e,max,rnd=Math.random){
+ if(rnd()<.2)return max;
+ const min=Math.min(1500,max),base=min+(max*.65-min)*e,jitter=(rnd()-.5)*.24*max;
+ return Math.round(Math.max(min,Math.min(max,base+jitter)))}
 function wantTop(x,h,top){if(!top)return false;if(x.st.err&&Math.random()<x.st.err)return false;
  if(x.down)return x.S.melds.flat().some(m=>sides(m,top).length);
  const v0=value(h,x.req,x.hid),v1=value([...h,top],x.req,x.hid);

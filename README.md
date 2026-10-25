@@ -36,10 +36,13 @@ Sube la carpeta completa a Cloudflare Pages, Netlify o Vercel. No hay comando de
 Abre la URL publicada: en Android, menú ⋮ > "Instalar app"; en iPhone, Compartir > "Añadir a pantalla de inicio".
 
 ## Al publicar una versión nueva
-Cambia `V` en `sw.js` (por ejemplo `carioca-v42`) para renovar la caché, y si agregas archivos a `src/`, inclúyelos en `FILES`.
+Cambia `V` en `sw.js` (por ejemplo `carioca-v43`) para renovar la caché, y si agregas archivos a `src/`, inclúyelos en `FILES`.
 
 ## Guardado
 La partida se guarda automáticamente en este dispositivo (también durante el turno de los bots) y se puede continuar desde el menú principal. Si el guardado está dañado, se descarta y se empieza una partida nueva.
+
+## Ritmo de los bots
+El bot juega cuando termina de "pensar", y cuánto tarda depende de lo difícil que sea su decisión (`effort()` en `src/bots.js`): las jugadas rutinarias salen en 1,5 a 3 s, las que implican bajarse o dudar sobre el descarte tardan algo más, y 1 de cada 5 turnos, al azar, el bot "duda" y espera el máximo. El máximo se elige en el menú de puntaje (7, 10, 15 o 20 s; por defecto 7 s). Con 7 s la espera media ronda los 3,5 s.
 
 ## Consumo de batería (móvil)
 Al diseñar animaciones ten presente que, mientras algo se anima, el teléfono redibuja la pantalla completa en cada refresco (hasta 120 veces por segundo en un iPhone Pro). Por eso:

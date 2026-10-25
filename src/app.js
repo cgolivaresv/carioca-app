@@ -1,4 +1,4 @@
-import {botPlay,deckDraw} from './bots.js';
+import {botPlay,deckDraw,effort,thinkTime} from './bots.js';
 import {SU,RK,pts,CON,desc,shuf,mkDeck,classify,meets,gen,solve,rm,sides,put} from './engine.js';
 import {unlock,play,setMuted,isMuted} from './audio.js';
 import {JOKER} from './joker.js';
@@ -20,7 +20,9 @@ function start(){const d=mkDeck();G.hands=[0,1,2].map(()=>d.splice(0,12));G.deck
  G.down=[0,0,0];G.taken=[[],[],[]];G.reshuf=0;G.justDown=0;G.melds=[[],[],[]];G.staged=[];G.sel=new Set();G.phase='draw';G.log=[];G.dealAnim=1;G.win=null;play('deal');G.peek=0;G.showScore=0;G.msg='Tu turno: roba del mazo o del descarte.';
  const st=G.round%3;if(st){G.phase='bots';G.turn=(st+2)%3;G.pend=st;G.msg='';render();advance()}else{startTurn();render()}}
 async function advance(){const my=SESSION;stopTurn();G.phase='bots';G.turn=(G.turn+1)%3;
- while(G.turn!=0){const p=G.turn;G.pend=p;G.thinking=true;G.say=phrase(G,p);G.thinkStart=Date.now();render();await sleep(THINK);if(my!=SESSION)return;G.thinking=false;
+ while(G.turn!=0){const p=G.turn;G.pend=p;G.thinking=true;G.say=phrase(G,p);
+  // El bot juega cuando termina de "pensar": las jugadas fáciles salen antes y algunos turnos al azar tardan el máximo (THINK)
+  G.thinkMs=thinkTime(effort(G,p),THINK);G.thinkStart=Date.now();render();await sleep(G.thinkMs);if(my!=SESSION)return;G.thinking=false;
   const top0=G.disc[G.disc.length-1],dk0=G.deck.length,r=botMove(p);G.pend=(p+1)%3;if(G.phase=='roundEnd')return;if(!r.drew||G.reshuf>=2){endRound(-1);return}
   G.vis={top:top0,deck:dk0};G.note={p,kind:r.drew,card:r.drewCard};G.fly={p,src:r.drew,card:r.drewCard};play(r.drew=='disc'?'flip':'draw');render();await sleep(1300);if(my!=SESSION)return;
   G.vis=null;G.dropId=r.discard&&r.discard.id;G.note=r.laid?{p,kind:'lay'}:null;if(r.laid)play('down');setTimeout(()=>play('discard'),r.laid?450:0);render();await sleep(1300);if(my!=SESSION)return;G.turn=(G.turn+1)%3}
@@ -69,7 +71,7 @@ const small=c=>card(c,'sm').replace('<button','<span').replace('</button>','</sp
 const mel=(p,list)=>list.map((m,i)=>`<div class="m" onclick="pegar(${p},${i})">${m.cs.map(small).join('')}</div>`).join('');
 let THINK=(()=>{try{return Math.max(7000,+localStorage.getItem('carioca:think')||7000)}catch(e){return 7000}})();
 function setThink(s){THINK=s*1000;try{localStorage.setItem('carioca:think',THINK)}catch(e){}render()}
-const thinkChips=()=>`<div class="row" style="margin-top:8px"><span class="chip2">Tiempo de los bots:</span>${[7,10,15,20].map(s=>`<button class="chip ${THINK==s*1000?'on':''}" onclick="setThink(${s})">${s} s</button>`).join('')}</div>`;
+const thinkChips=()=>`<div class="row" style="margin-top:8px"><span class="chip2">Espera máx. de los bots:</span>${[7,10,15,20].map(s=>`<button class="chip ${THINK==s*1000?'on':''}" onclick="setThink(${s})">${s} s</button>`).join('')}</div>`;
 function flyEl(){const f=G.fly,st=`--dx:${f.p==1?-110:110}px;--sx:${f.src=='disc'?34:-34}px`;
  return f.src=='disc'?card(f.card,'sm fly face').replace('<button','<button style="'+st+'"'):`<i class="fly" style="${st}"></i>`}
 function toast(){const n=G.note,nm=NM[n.p];
@@ -103,7 +105,7 @@ function plate(p){const tm=p==0&&TURN>0&&G.turnStart&&inTurn(),el=G.showScore&&G
  say=p?(G.log.find(l=>l.startsWith(NM[p]))||'').slice(NM[p].length+1):'';
  const wl=G.phase=='roundEnd'&&G.win!=null&&G.win>=0?`<em class="wl ${G.win==p?'win':'lose'}">${G.win==p?'Gana':'Pierde'}</em>`:'';
  const bub=p?(act&&G.thinking?`<div class="bubble talk">${G.say||''}<span class="dots"><i></i><i></i><i></i></span></div>`:say?`<div class="bubble say">${say}</div>`:''):'';
- return `<div class="seat"><div class="av ${act?'turn':''} ${p&&act&&G.thinking?'th':''}" style="--ac2:${COL[p]}">${AVT()[p]}${dealer?'<i class="dlr">D</i>':''}</div>${bub}<div class="plate"><b>${NM[p]}</b><span>${G.hands[p].length} cartas · ${tot} pts${tm?` · <b class="tt" id="tt">${secs}</b> s`:''}</span>${wl}${p&&act&&G.thinking?`<u class="bar" style="animation:tbar ${THINK}ms steps(${stepsOf(THINK)}) forwards;animation-delay:-${Date.now()-G.thinkStart}ms"></u>`:''}${tm?`<u class="bar" style="animation:tbar ${TURN}ms steps(${stepsOf(TURN)}) forwards,tcol ${TURN}ms steps(${stepsOf(TURN)}) forwards;animation-delay:-${el}ms,-${el}ms"></u>`:''}</div></div>`}
+ return `<div class="seat"><div class="av ${act?'turn':''} ${p&&act&&G.thinking?'th':''}" style="--ac2:${COL[p]}">${AVT()[p]}${dealer?'<i class="dlr">D</i>':''}</div>${bub}<div class="plate"><b>${NM[p]}</b><span>${G.hands[p].length} cartas · ${tot} pts${tm?` · <b class="tt" id="tt">${secs}</b> s`:''}</span>${wl}${p&&act&&G.thinking?`<u class="bar" style="animation:tbar ${G.thinkMs||THINK}ms steps(${stepsOf(G.thinkMs||THINK)}) forwards;animation-delay:-${Date.now()-G.thinkStart}ms"></u>`:''}${tm?`<u class="bar" style="animation:tbar ${TURN}ms steps(${stepsOf(TURN)}) forwards,tcol ${TURN}ms steps(${stepsOf(TURN)}) forwards;animation-delay:-${el}ms,-${el}ms"></u>`:''}</div></div>`}
 function peek(){G.peek=1;G.showScore=0;render()}
 // FLIP: guarda dónde estaban las cartas de la mano para que se deslicen suavemente a su nuevo sitio
 function flipBefore(){const m=new Map();if(G.flip)document.querySelectorAll('#hand .c').forEach(el=>m.set(el.dataset.id,el.getBoundingClientRect()));G.flip=0;return m}
