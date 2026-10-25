@@ -9,6 +9,8 @@ Juego de carioca para 1 jugador contra 1 a 4 bots (mesas de 2 a 5 jugadores), co
 - `src/bots.js`: jugadores virtuales (solo usan información pública; el reparto y los desempates son aleatorios).
 - `src/app.js`: estado de la partida, turnos, pantalla, guardado y estadísticas (localStorage).
 - `src/safe.js`: escapado de nombres para HTML y validación de la partida guardada.
+- `src/online.js`, `src/net.js`, `src/config.js`: cliente del multijugador (traduce el estado del servidor a tu vista, WebSocket con reconexión y la dirección del servidor).
+- `worker/`: servidor de Cloudflare (`core.js` = lógica de la sala, `index.js` = Worker y Durable Object). Config en `wrangler.toml`.
 - `src/roster.js`, `src/avatars.js`, `src/lines.js`: jugadores, avatares (con respaldo SVG) y frases de los bots.
 - `src/audio.js`, `src/joker.js`: sonidos y dibujo del comodín.
 - `tools/sim.js`: simulación de partidas para medir el balance de los bots.
@@ -37,7 +39,7 @@ Sube la carpeta completa a Cloudflare Pages, Netlify o Vercel. No hay comando de
 Abre la URL publicada: en Android, menú ⋮ > "Instalar app"; en iPhone, Compartir > "Añadir a pantalla de inicio".
 
 ## Al publicar una versión nueva
-Cambia `V` en `sw.js` (por ejemplo `carioca-v46`) para renovar la caché, sube la versión visible en `index.html` (etiqueta "Versión" del menú) y en `package.json`, y si agregas archivos a `src/`, inclúyelos en `FILES`.
+Cambia `V` en `sw.js` (por ejemplo `carioca-v47`) para renovar la caché, sube la versión visible en `index.html` (etiqueta "Versión" del menú) y en `package.json`, y si agregas archivos a `src/`, inclúyelos en `FILES`.
 
 ## Tamaño de la mesa
 El menú principal elige cuántos rivales hay (1 a 4, por defecto 2). Siempre se juega con 2 mazos y 4 comodines (108 cartas) y 12 cartas por jugador; el que reparte rota con la ronda y el primero en jugar es el siguiente. Todo el estado usa `G.n` (jugadores en la mesa) y el asiento 0 es siempre el jugador.
@@ -55,8 +57,22 @@ Al diseñar animaciones ten presente que, mientras algo se anima, el teléfono r
 - Las luces de fondo solo se mueven en el menú: con la clase `ingame` en `<body>` quedan quietas.
 - El reloj del turno (`setInterval`) solo funciona mientras hay un turno con tiempo límite.
 
+## Multijugador en línea
+Una sala admite de 2 a 5 asientos; las personas que entren juegan y los asientos libres los ocupan bots (siempre hay al menos una persona, así que como máximo hay 4 bots). El servidor (`worker/`) tiene el mazo y todas las manos y valida cada jugada con `src/game.js`; a cada jugador solo le envía su mano. Si alguien se desconecta, juega solo con pausa de unos segundos hasta que vuelva (con el mismo navegador entra con su token). Si sale a propósito, un bot toma su asiento.
+
+**Publicar el servidor (una sola vez)**
+1. Cuenta gratuita en Cloudflare, con un subdominio `workers.dev` activado.
+2. Crear un token de API con la plantilla «Editar Cloudflare Workers» y copiar el ID de cuenta.
+3. En GitHub: Settings → Secrets and variables → Actions → crear `CLOUDFLARE_API_TOKEN` y `CLOUDFLARE_ACCOUNT_ID`.
+4. Cada cambio a `main` en `worker/` o en las reglas lanza `.github/workflows/deploy-server.yml`, que corre las pruebas y despliega. También se puede lanzar a mano desde la pestaña Actions.
+5. Copiar la dirección que muestra el despliegue (`https://carioca-server.<tu-subdominio>.workers.dev`) en `SERVER_DEFAULT` de `src/config.js` y subir la versión.
+
+**Probar el servidor en tu computador**: `npx wrangler dev` (puerto 8787) y `npm start` (8080), y abrir `http://localhost:8080/?server=http://localhost:8787`. Se puede acelerar a los bots con `--var THINK_MAX:300`. El sitio solo acepta conexiones desde los orígenes de `ALLOWED_ORIGINS` en `wrangler.toml`.
+
+**Límites a tener presentes**: el plan gratuito de Cloudflare tiene cuotas diarias; si algún día se llegan a agotar, el servidor dejaría de responder hasta el día siguiente. Los nombres de otros jugadores se escapan siempre con `esc()` antes de dibujarse.
+
 ## Próximas fases
-2: cuentas, partidas en la nube y ranking. 3: multijugador en línea. Antes de la fase 3, los nombres de otros jugadores deben pasar siempre por `esc()` (`src/safe.js`).
+Cuentas, partidas en la nube y ranking.
 
 ## Validación
 `npm test` ejecuta las pruebas de reglas, bots y guardado. `npm run sim` compara el comportamiento estadístico de los bots; usa repartos aleatorios, así que sus resultados cambian entre ejecuciones. En la ronda 10 (escala real) es normal que muchas rondas terminen por agotamiento del mazo.

@@ -19,8 +19,14 @@
   <div class="who"><small>Tu nombre</small><input id="pName" type="text" maxlength="12" placeholder="Escribe tu nombre" autocomplete="off" autocapitalize="words" spellcheck="false"></div>
   <div class="who"><small>Elige tu avatar</small><div id="picks" class="picks"></div></div>
   <div class="who"><small>Rivales en la mesa</small><div id="nbots" class="nb"></div></div>
+  <div class="who" id="online"><small>Jugar en línea</small>
+   <div class="nb"><button id="bCreate" class="chip" type="button">Crear sala</button></div>
+   <div class="nb" style="margin-top:8px"><input id="rCode" type="text" maxlength="4" placeholder="CÓDIGO" autocomplete="off" autocapitalize="characters" spellcheck="false"><button id="bJoin" class="chip" type="button">Unirse</button></div>
+   <button id="bBack" class="link" type="button" hidden></button>
+   <small id="onNote" class="note"></small>
+  </div>
   <button id="bSnd" class="link" type="button"></button>
-  <small class="ver">Versión 0.3.1</small>
+  <small class="ver">Versión 0.4.0</small>
  </div>
 </div></div>
 <script type="module" src="src/app.js"></script></body></html>

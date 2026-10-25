@@ -1,0 +1,17 @@
+# Servidor multijugador de Carioca (Cloudflare Workers + Durable Objects, plan gratuito).
+name = "carioca-server"
+main = "worker/index.js"
+compatibility_date = "2025-01-01"
+
+[vars]
+# Páginas que pueden abrir una sala. Agrega aquí tu dominio si algún día lo usas.
+ALLOWED_ORIGINS = "https://cgolivaresv.github.io,http://localhost:8080,http://127.0.0.1:8080"
+
+[[durable_objects.bindings]]
+name = "ROOMS"
+class_name = "Room"
+
+# El plan gratuito solo admite Durable Objects con almacenamiento SQLite.
+[[migrations]]
+tag = "v1"
+new_sqlite_classes = ["Room"]

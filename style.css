@@ -569,3 +569,12 @@ body{-webkit-text-size-adjust:100%;-webkit-user-select:none;user-select:none}
  .table.t4>.mine{grid-row:5}
  .seats.solo>.seat:nth-child(1){justify-self:start}
 }
+
+/* ---- Multijugador en línea (0.4.0) ---- */
+#rCode{width:120px;padding:10px 12px;border-radius:999px;border:1.5px solid rgba(230,195,92,.55);background:rgba(10,6,16,.7);color:#f6ecd0;font:700 16px Georgia,'Times New Roman',serif;letter-spacing:.3em;text-align:center;outline:none;-webkit-user-select:text;user-select:text;text-transform:uppercase}
+#rCode::placeholder{color:#8c7e5c;font-weight:400;letter-spacing:.1em}
+#rCode:focus{border-color:#e6c35c;box-shadow:0 0 14px rgba(230,195,92,.35)}
+#rCode:disabled,.nb .chip:disabled{opacity:.4}
+.lp{display:flex;align-items:center;gap:10px;margin:8px 0}
+.lpav{width:38px;height:38px;border-radius:50%;overflow:hidden;flex:none;background:#120b1c}
+.lpav img,.lpav picture{display:block;width:100%;height:100%;object-fit:cover}
