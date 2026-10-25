@@ -15,12 +15,13 @@ export function validSave(s){
  if(!s||typeof s!='object'||s.v!==1)return false;
  if(!Number.isInteger(s.round)||s.round<0||s.round>9)return false;
  if(!PHASES.includes(s.phase))return false;
- if(s.phase=='bots'&&!(Number.isInteger(s.pend)&&s.pend>=0&&s.pend<=2))return false;
- if(!Array.isArray(s.hands)||s.hands.length!==3||!s.hands.every(cards))return false;
+ if(!Array.isArray(s.hands)||s.hands.length<2||s.hands.length>5||!s.hands.every(cards))return false;
+ const n=s.hands.length; // jugadores en la mesa (2 a 5): todo lo demás debe tener ese mismo largo
+ if(s.phase=='bots'&&!(Number.isInteger(s.pend)&&s.pend>=0&&s.pend<n))return false;
  if(!cards(s.deck)||!cards(s.disc))return false;
- if(!Array.isArray(s.melds)||s.melds.length!==3||!s.melds.every(pl=>Array.isArray(pl)&&pl.every(isMeld)))return false;
- if(!Array.isArray(s.down)||s.down.length!==3)return false;
+ if(!Array.isArray(s.melds)||s.melds.length!==n||!s.melds.every(pl=>Array.isArray(pl)&&pl.every(isMeld)))return false;
+ if(!Array.isArray(s.down)||s.down.length!==n)return false;
  if(!Array.isArray(s.taken)&&s.taken!==undefined)return false;
  if(s.staged!==undefined&&!(Array.isArray(s.staged)&&s.staged.every(isMeld)))return false;
- if(!Array.isArray(s.scores)||!s.scores.every(r=>Array.isArray(r)&&r.length===3&&r.every(Number.isFinite)))return false;
+ if(!Array.isArray(s.scores)||!s.scores.every(r=>Array.isArray(r)&&r.length===n&&r.every(Number.isFinite)))return false;
  return true}
