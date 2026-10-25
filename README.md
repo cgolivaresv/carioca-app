@@ -39,7 +39,7 @@ Sube la carpeta completa a Cloudflare Pages, Netlify o Vercel. No hay comando de
 Abre la URL publicada: en Android, menú ⋮ > "Instalar app"; en iPhone, Compartir > "Añadir a pantalla de inicio".
 
 ## Al publicar una versión nueva
-Cambia `V` en `sw.js` (por ejemplo `carioca-v47`) para renovar la caché, sube la versión visible en `index.html` (etiqueta "Versión" del menú) y en `package.json`, y si agregas archivos a `src/`, inclúyelos en `FILES`.
+Cambia `V` en `sw.js` (por ejemplo `carioca-v48`) para renovar la caché, sube la versión visible en `index.html` (etiqueta "Versión" del menú) y en `package.json`, y si agregas archivos a `src/`, inclúyelos en `FILES`.
 
 ## Tamaño de la mesa
 El menú principal elige cuántos rivales hay (1 a 4, por defecto 2). Siempre se juega con 2 mazos y 4 comodines (108 cartas) y 12 cartas por jugador; el que reparte rota con la ronda y el primero en jugar es el siguiente. Todo el estado usa `G.n` (jugadores en la mesa) y el asiento 0 es siempre el jugador.
@@ -65,7 +65,7 @@ Una sala admite de 2 a 5 asientos; las personas que entren juegan y los asientos
 2. Crear un token de API con la plantilla «Editar Cloudflare Workers» y copiar el ID de cuenta.
 3. En GitHub: Settings → Secrets and variables → Actions → crear `CLOUDFLARE_API_TOKEN` y `CLOUDFLARE_ACCOUNT_ID`.
 4. Cada cambio a `main` en `worker/` o en las reglas lanza `.github/workflows/deploy-server.yml`, que corre las pruebas y despliega. También se puede lanzar a mano desde la pestaña Actions.
-5. Copiar la dirección que muestra el despliegue (`https://carioca-server.<tu-subdominio>.workers.dev`) en `SERVER_DEFAULT` de `src/config.js` y subir la versión.
+5. Copiar la dirección del servidor en `SERVER_DEFAULT` de `src/config.js` y subir la versión (la actual es `https://carioca-server.cg-olivaresv.workers.dev`; se puede comprobar abriendo `/api/health`, que responde `{"ok":true}`).
 
 **Probar el servidor en tu computador**: `npx wrangler dev` (puerto 8787) y `npm start` (8080), y abrir `http://localhost:8080/?server=http://localhost:8787`. Se puede acelerar a los bots con `--var THINK_MAX:300`. El sitio solo acepta conexiones desde los orígenes de `ALLOWED_ORIGINS` en `wrangler.toml`.
 
