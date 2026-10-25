@@ -155,6 +155,7 @@ body{background:radial-gradient(ellipse at 50% -10%,#2a0f3d 0,#0a0713 55%,#05030
 #fx .beam{position:absolute;top:-10vh;width:24vmax;height:90vh;background:linear-gradient(rgba(255,46,147,.22),rgba(255,46,147,0) 70%);-webkit-mask-image:linear-gradient(90deg,transparent,#000 35%,#000 65%,transparent);mask-image:linear-gradient(90deg,transparent,#000 35%,#000 65%,transparent);transform-origin:50% 0;will-change:transform;animation:sweep 9s steps(180) infinite alternate}
 #fx .b1{left:6%}#fx .b2{right:6%;background:linear-gradient(rgba(122,77,255,.26),rgba(122,77,255,0) 70%);animation-delay:-4s}
 @keyframes sweep{from{transform:rotate(-18deg)}to{transform:rotate(18deg)}}
+.ver{display:block;margin-top:14px;text-align:center;opacity:.45;font-size:11px;letter-spacing:.08em;color:#cdbfe6}
 /* Ahorro de batería: el humo y las luces solo se mueven en el menú; durante la partida quedan quietos */
 body.ingame #fx .sm,body.ingame #fx .beam{animation-play-state:paused}
 /* botones redondos y contrato */

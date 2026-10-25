@@ -36,7 +36,7 @@ Sube la carpeta completa a Cloudflare Pages, Netlify o Vercel. No hay comando de
 Abre la URL publicada: en Android, menú ⋮ > "Instalar app"; en iPhone, Compartir > "Añadir a pantalla de inicio".
 
 ## Al publicar una versión nueva
-Cambia `V` en `sw.js` (por ejemplo `carioca-v43`) para renovar la caché, y si agregas archivos a `src/`, inclúyelos en `FILES`.
+Cambia `V` en `sw.js` (por ejemplo `carioca-v44`) para renovar la caché, sube la versión visible en `index.html` (etiqueta "Versión" del menú) y en `package.json`, y si agregas archivos a `src/`, inclúyelos en `FILES`.
 
 ## Guardado
 La partida se guarda automáticamente en este dispositivo (también durante el turno de los bots) y se puede continuar desde el menú principal. Si el guardado está dañado, se descarta y se empieza una partida nueva.
