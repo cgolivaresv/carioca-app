@@ -103,16 +103,17 @@ function toggleScore(){G.showScore=!G.showScore;
  render()}
 // El reloj del turno solo "late" mientras hay un turno con tiempo límite (antes corría siempre, 4 veces por segundo)
 let lastTick=0,tickId=0;
-const tickFn=()=>{if(!G.turnStart||G.showScore||document.hidden)return;const e=document.getElementById('tt');if(e){const s=Math.max(0,Math.ceil((TURN-(Date.now()-G.turnStart))/1000));e.textContent=s;if(s>0&&s<=5&&s!=lastTick){lastTick=s;play('tick')}}};
+const LIM=()=>NET?(G.limitMs||0):TURN; // límite del turno en ms: el de la sala (en línea) o el de las opciones (contra bots)
+const tickFn=()=>{if(!G.turnStart||G.showScore||document.hidden)return;const e=document.getElementById('tt');if(e){const s=Math.max(0,Math.ceil((LIM()-(Date.now()-G.turnStart))/1000));e.textContent=s;if(s>0&&s<=5&&s!=lastTick){lastTick=s;play('tick')}}};
 const tickOn=()=>{if(!tickId)tickId=setInterval(tickFn,250)},tickOff=()=>{clearInterval(tickId);tickId=0};
 const tots=()=>totals(G);
 // Las barras de tiempo avanzan a 4 pasos por segundo (en vez de un fotograma por cada refresco de pantalla): ahorra GPU y batería
 const stepsOf=ms=>Math.max(1,Math.ceil(ms/250));
-function plate(p){const tm=p==0&&TURN>0&&G.turnStart&&inTurn(),el=G.showScore&&G.left!=null?TURN-G.left:Date.now()-G.turnStart,secs=Math.max(0,Math.ceil((TURN-el)/1000)),tot=tots()[p],act=p?(G.phase=='bots'&&G.turn==p):(G.phase=='draw'||G.phase=='play'),dealer=(NET?toLocal(dealerOf(G),G.me,G.n):dealerOf(G))==p,
+function plate(p){const T=LIM(),tm=p==0&&T>0&&G.turnStart&&inTurn(),el=G.showScore&&G.left!=null?T-G.left:Date.now()-G.turnStart,secs=Math.max(0,Math.ceil((T-el)/1000)),tot=tots()[p],act=p?(G.phase=='bots'&&G.turn==p):(G.phase=='draw'||G.phase=='play'),dealer=(NET?toLocal(dealerOf(G),G.me,G.n):dealerOf(G))==p,
  say=p?(G.log.find(l=>l.startsWith(NM[p]))||'').slice(NM[p].length+1):'';
  const wl=G.phase=='roundEnd'&&G.win!=null&&G.win>=0?`<em class="wl ${G.win==p?'win':'lose'}">${G.win==p?'Gana':'Pierde'}</em>`:'';
  const bub=p?(act&&G.thinking?`<div class="bubble talk">${G.say||''}<span class="dots"><i></i><i></i><i></i></span></div>`:say?`<div class="bubble say">${say}</div>`:''):'';
- return `<div class="seat"><div class="av ${act?'turn':''} ${p&&act&&G.thinking?'th':''}" style="--ac2:${COL[p]}">${AVT()[p]}${dealer?'<i class="dlr">D</i>':''}</div>${bub}<div class="plate"><b>${NM[p]}</b><span>${G.hands[p].length} cartas · ${tot} pts${tm?` · <b class="tt" id="tt">${secs}</b> s`:''}</span>${wl}${p&&act&&G.thinking?`<u class="bar" style="animation:tbar ${G.thinkMs||THINK}ms steps(${stepsOf(G.thinkMs||THINK)}) forwards;animation-delay:-${Date.now()-G.thinkStart}ms"></u>`:''}${tm?`<u class="bar" style="animation:tbar ${TURN}ms steps(${stepsOf(TURN)}) forwards,tcol ${TURN}ms steps(${stepsOf(TURN)}) forwards;animation-delay:-${el}ms,-${el}ms"></u>`:''}</div></div>`}
+ return `<div class="seat"><div class="av ${act?'turn':''} ${p&&act&&G.thinking?'th':''}" style="--ac2:${COL[p]}">${AVT()[p]}${dealer?'<i class="dlr">D</i>':''}</div>${bub}<div class="plate"><b>${NM[p]}</b><span>${G.hands[p].length} cartas · ${tot} pts${tm?` · <b class="tt" id="tt">${secs}</b> s`:''}</span>${wl}${p&&act&&G.thinking?`<u class="bar" style="animation:tbar ${G.thinkMs||THINK}ms steps(${stepsOf(G.thinkMs||THINK)}) forwards;animation-delay:-${Date.now()-G.thinkStart}ms"></u>`:''}${tm?`<u class="bar" style="animation:tbar ${T}ms steps(${stepsOf(T)}) forwards,tcol ${T}ms steps(${stepsOf(T)}) forwards;animation-delay:-${el}ms,-${el}ms"></u>`:''}</div></div>`}
 function peek(){G.peek=1;G.showScore=0;render()}
 // FLIP: guarda dónde estaban las cartas de la mano para que se deslicen suavemente a su nuevo sitio
 function flipBefore(){const m=new Map();if(G.flip)document.querySelectorAll('#hand .c').forEach(el=>m.set(el.dataset.id,el.getBoundingClientRect()));G.flip=0;return m}
@@ -184,13 +185,13 @@ function finish(){if(G.statsDone)return;G.statsDone=1;const t=tots(),s=loadStats
 function statsBox(){const s=loadStats();return `<div class="box"><b>Estadísticas</b> <span class="mu">(guardadas en este dispositivo)</span><div>Partidas: ${s.played} · Ganadas: ${s.won} · Mejor puntaje: ${s.best==null?'—':s.best}</div>${s.last.map(g=>`<div class="mu">${esc(g.d)}: Tú ${esc(g.t[0])}${g.t.slice(1).map((x,i)=>` · ${esc((g.n||['Ana','Beto'])[i]||'Bot')} ${esc(x)}`).join('')}</div>`).join('')}</div>`}
 // si una imagen de avatar no carga, se cambia por el avatar SVG de respaldo
 window.avFail=el=>{el.onerror=null;const i=+el.dataset.av;(el.closest('picture')||el).outerHTML=el.dataset.kind=='bust'?fallbackBust(i):fallbackRound(i)};
-Object.assign(window,{setSeats,startOnline,shareRoom,leaveRoom,askExit,keepPlaying,exitMenu,abandon,sel,take,armar,deshacer,bajar,pegar,elegir,descartar,next,ordenar,cancelar,render,toggleScore,peek,setThink,setTurn,toggleSound});
+Object.assign(window,{setLimit,setSeats,startOnline,shareRoom,leaveRoom,askExit,keepPlaying,exitMenu,abandon,sel,take,armar,deshacer,bajar,pegar,elegir,descartar,next,ordenar,cancelar,render,toggleScore,peek,setThink,setTurn,toggleSound});
 // ---- Multijugador en línea (el servidor tiene la partida; aquí solo se dibuja lo que te toca ver y se envían tus jugadas) ----
 const NET_MSG={nofound:'Esa sala no existe.',full:'La sala está llena.',started:'Esa partida ya empezó.',left:'Saliste de esa partida.',replaced:'Entraste a la sala desde otro lugar.',taken:'Ese código ya está en uso, intenta de nuevo.',lost:'Se perdió la conexión con el servidor.'};
 const freshG=()=>({round:0,scores:[],sort:true,log:[],online:1});
 function setNames(ns){NM.length=ns.length;ns.forEach((x,i)=>{NM[i]=esc(x)})}
 async function createRoom(){const server=serverUrl();if(!server)return;homeNote('Creando sala…');
- try{startNet(await newCode(server),true)}catch(e){homeNote('No se pudo conectar con el servidor.')}}
+ try{startNet(await newCode(server),true)}catch(e){homeNote('No se pudo crear la sala: '+(e&&e.message||'sin conexión con el servidor')+'.')}}
 function joinRoom(code){code=String(code||'').toUpperCase().replace(/[^A-Z]/g,'');
  if(code.length!=4)return homeNote('El código tiene 4 letras.');startNet(code,false)}
 function startNet(code,create,token){const server=serverUrl();if(!server)return;if(NET)NET.conn.close();
@@ -204,6 +205,7 @@ function onNet(m){
  if(m.t=='lobby'){if(G.hands)G=freshG();NET.lobby=m;NET.you=m.you;NET.phase='lobby';NET.note='';renderLobby()}
  else if(m.t=='state'){NET.you=m.you;NET.phase='playing';applyState(m)}
  else if(m.t=='err'){
+  if(m.code=='lost')return explainLost(m);
   if(m.code&&NET_MSG[m.code])return leaveOnline(NET_MSG[m.code]);
   if(NET.phase=='playing'){G.msg=m.msg;play('error');render()}else{NET.note=m.msg;renderLobby()}}}
 function applyState(m){
@@ -211,16 +213,19 @@ function applyState(m){
  Object.assign(G,patch);setNames(patch.names);
  if(newRound){G.dealAnim=1;G.peek=0;G.showScore=0;G.sel=new Set();G.log=[];G.choose=null;G.confirmExit=0;G.statsDone=1;play('deal')}
  G.sel=G.sel||new Set();G.fresh=fresh.length?new Set(fresh):null;
- for(const e of events){if(e.p===0)continue;const nm=NM[e.p];
+ let auto=false;
+ for(const e of events){if(e.p===0){if(e.e=='discard'&&e.auto)auto=true;continue}const nm=NM[e.p];
   if(e.e=='draw'){log(nm+' '+(e.from=='deck'?'roba del mazo':'toma del descarte'+(e.card?' '+cn(e.card):'')));G.note={p:e.p,kind:e.from,card:e.card};G.fly={p:e.p,src:e.from,card:e.card};play(e.from=='disc'?'flip':'draw')}
   else if(e.e=='lay'){log(nm+' se baja');G.note={p:e.p,kind:'lay'};play('down')}
   else if(e.e=='attach')log(nm+' pega una carta');
   else if(e.e=='discard'){log(nm+' descarta '+cn(e.card));G.dropId=e.card.id;play('discard')}}
  if(events.some(e=>e.p!==0)){clearTimeout(noteT);noteT=setTimeout(()=>{if(G.note){G.note=null;if(G.hands&&NET)render()}},1600)}
+ G.limitMs=m.turn?m.turn.limitMs:0;G.turnStart=m.turn?Date.now()-(m.turn.limitMs-m.turn.remainMs):null;if(G.turnStart)tickOn();else tickOff();
  G.thinking=!!think&&think.p!==0;if(think){G.thinkMs=think.ms;G.thinkStart=Date.now();G.say=phrase(G,think.p)}
  if(G.phase=='draw')G.msg='Tu turno: roba del mazo o del descarte.';
  else if(G.phase=='play')G.msg=G.justDown?'¡Bajado! Para terminar tu jugada, descarta una carta. Podrás pegar cartas desde tu próximo turno.':'Arma combinaciones, pega cartas o descarta una.';
  else if(G.phase=='bots')G.msg='';
+ if(auto&&G.phase!='roundEnd')G.msg='⏰ Se acabó tu tiempo: jugada automática.';
  if(G.phase=='roundEnd'&&!wasEnd){const w=G.win;
   G.msg=w<0?'Se acabó el mazo: nadie salió. Se cuentan las cartas en mano.':(w?NM[w]+' se queda':'Te quedas')+' sin cartas y gana la ronda.';
   if(w===0)play('win');else if(w>0)play('lose')}
@@ -232,15 +237,23 @@ function renderLobby(){const L=NET.lobby;if(!L)return;const R=L.room,host=L.you.
  <div class="box"><b>Jugadores (${R.players.length}/${R.seatsN})</b>${R.players.map(p=>`<div class="lp"><span class="lpav">${roundOf(p.avatar)}</span><span>${esc(p.name)}${p.host?' · anfitrión':''}${p.connected?'':' · sin conexión'}</span></div>`).join('')}
  <div class="mu">${R.seatsN-R.players.length} asiento(s) para bots</div></div>
  ${host?`<div class="row"><span class="chip2">Asientos en la mesa:</span>${[2,3,4,5].map(k=>`<button class="chip ${R.seatsN==k?'on':''}" ${k<R.players.length?'disabled':''} onclick="setSeats(${k})">${k}</button>`).join('')}</div>`:`<div class="mu" style="margin-top:8px">Mesa de ${R.seatsN} jugadores. Espera a que el anfitrión empiece.</div>`}
+ ${host?`<div class="row"><span class="chip2">Tiempo por turno:</span>${[[0,'Sin límite'],[30,'30 s'],[45,'45 s'],[60,'60 s'],[90,'90 s']].map(([k,l])=>`<button class="chip ${R.limit===k?'on':''}" onclick="setLimit(${k})">${l}</button>`).join('')}</div>`:`<div class="mu">Tiempo por turno: ${R.limit?R.limit+' s':'sin límite'}.</div>`}
  <div class="col" style="margin-top:12px">${host?`<button class="act go" onclick="startOnline()">Empezar partida</button>`:''}<button class="act gh" onclick="leaveRoom()">Salir de la sala</button></div>
  ${off?'<div class="mu">⚠ Sin conexión, reconectando…</div>':''}${NET.note?`<div class="mu">${esc(NET.note)}</div>`:''}</div></div>`}
 function setSeats(k){if(NET)NET.send({t:'config',seats:k})}
+function setLimit(k){if(NET)NET.send({t:'config',limit:k})}
 function startOnline(){if(NET)NET.send({t:'start'})}
 async function shareRoom(){if(!NET)return;const url=location.origin+location.pathname+'?sala='+NET.code,text='Juega Carioca conmigo: sala '+NET.code;
  try{if(navigator.share){await navigator.share({title:'Carioca',text,url});return}await navigator.clipboard.writeText(url);NET.note='Enlace copiado.'}catch(e){NET.note='Código de la sala: '+NET.code}
  renderLobby()}
 // Salir de la sala por voluntad propia (el servidor deja un bot en tu asiento)
 function leaveRoom(){if(NET){try{NET.send({t:'leave'})}catch(e){}}forgetRoom();leaveOnline()}
+// Cuando no hay forma de conectar, pregunta al servidor qué ve y lo cuenta (así se sabe si falla la red, el servidor o el origen)
+async function explainLost(m){const d=m.detail||{};let t='No se pudo alcanzar el servidor. Revisa tu conexión a internet.';
+ try{const r=await fetch(serverUrl()+'/api/diag',{cache:'no-store'});
+  if(r.ok){const j=await r.json();t='El servidor responde (v'+j.v+') pero la conexión en tiempo real falló (código '+(d.closeCode||'?')+(d.opened?'':', ni siquiera se abrió')+'). Origen que ve el servidor: '+(j.origin||'ninguno')+'. Sala de prueba: '+j.room+'.'}
+  else t='El servidor respondió '+r.status+'.'}catch(e){}
+ leaveOnline(t)}
 function leaveOnline(msg){if(NET){NET.conn.close();NET=null}SESSION++;clearTimeout(noteT);G=freshG();G.online=0;document.getElementById('app').innerHTML='';openHome();homeNote(msg||'')}
 // ---- Pantalla de inicio ----
 const hasSave=()=>!!readSave();

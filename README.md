@@ -39,7 +39,7 @@ Sube la carpeta completa a Cloudflare Pages, Netlify o Vercel. No hay comando de
 Abre la URL publicada: en Android, menú ⋮ > "Instalar app"; en iPhone, Compartir > "Añadir a pantalla de inicio".
 
 ## Al publicar una versión nueva
-Cambia `V` en `sw.js` (por ejemplo `carioca-v48`) para renovar la caché, sube la versión visible en `index.html` (etiqueta "Versión" del menú) y en `package.json`, y si agregas archivos a `src/`, inclúyelos en `FILES`.
+Cambia `V` en `sw.js` (por ejemplo `carioca-v49`) para renovar la caché, sube la versión visible en `index.html` (etiqueta "Versión" del menú) y en `package.json`, y si agregas archivos a `src/`, inclúyelos en `FILES`.
 
 ## Tamaño de la mesa
 El menú principal elige cuántos rivales hay (1 a 4, por defecto 2). Siempre se juega con 2 mazos y 4 comodines (108 cartas) y 12 cartas por jugador; el que reparte rota con la ronda y el primero en jugar es el siguiente. Todo el estado usa `G.n` (jugadores en la mesa) y el asiento 0 es siempre el jugador.
@@ -58,16 +58,18 @@ Al diseñar animaciones ten presente que, mientras algo se anima, el teléfono r
 - El reloj del turno (`setInterval`) solo funciona mientras hay un turno con tiempo límite.
 
 ## Multijugador en línea
-Una sala admite de 2 a 5 asientos; las personas que entren juegan y los asientos libres los ocupan bots (siempre hay al menos una persona, así que como máximo hay 4 bots). El servidor (`worker/`) tiene el mazo y todas las manos y valida cada jugada con `src/game.js`; a cada jugador solo le envía su mano. Si alguien se desconecta, juega solo con pausa de unos segundos hasta que vuelva (con el mismo navegador entra con su token). Si sale a propósito, un bot toma su asiento.
+Una sala admite de 2 a 5 asientos; las personas que entren juegan y los asientos libres los ocupan bots (siempre hay al menos una persona, así que como máximo hay 4 bots). El servidor (`worker/`) tiene el mazo y todas las manos y valida cada jugada con `src/game.js`; a cada jugador solo le envía su mano. Cada turno de una persona tiene un límite que elige el anfitrión (sin límite, 30, 45, 60 —por defecto— o 90 s): si se agota, el servidor roba del mazo y descarta por ella, y tras dos turnos agotados seguidos pasa a «ausente» (juega un bot por ella con una pausa corta) hasta que vuelva a jugar. Lo mismo ocurre si se desconecta; con el mismo navegador vuelve a entrar con su token. Si sale a propósito, un bot toma su asiento.
 
 **Publicar el servidor (una sola vez)**
 1. Cuenta gratuita en Cloudflare, con un subdominio `workers.dev` activado.
 2. Crear un token de API con la plantilla «Editar Cloudflare Workers» y copiar el ID de cuenta.
 3. En GitHub: Settings → Secrets and variables → Actions → crear `CLOUDFLARE_API_TOKEN` y `CLOUDFLARE_ACCOUNT_ID`.
 4. Cada cambio a `main` en `worker/` o en las reglas lanza `.github/workflows/deploy-server.yml`, que corre las pruebas y despliega. También se puede lanzar a mano desde la pestaña Actions.
-5. Copiar la dirección del servidor en `SERVER_DEFAULT` de `src/config.js` y subir la versión (la actual es `https://carioca-server.cg-olivaresv.workers.dev`; se puede comprobar abriendo `/api/health`, que responde `{"ok":true}`).
+5. Copiar la dirección del servidor en `SERVER_DEFAULT` de `src/config.js` y subir la versión (la actual es `https://carioca-server.cg-olivaresv.workers.dev`; `/api/health` responde `{"ok":true}` y `/api/diag` muestra la versión, los orígenes aceptados y si el Durable Object responde: sirve para saber por qué no conecta la app).
 
 **Probar el servidor en tu computador**: `npx wrangler dev` (puerto 8787) y `npm start` (8080), y abrir `http://localhost:8080/?server=http://localhost:8787`. Se puede acelerar a los bots con `--var THINK_MAX:300`. El sitio solo acepta conexiones desde los orígenes de `ALLOWED_ORIGINS` en `wrangler.toml`.
+
+**Si un cambio en `worker/index.js` no despliega**: un Worker solo puede exportar manejadores y clases desde su archivo principal; una constante exportada impide que arranque. Siempre conviene probar con `npx wrangler dev` antes de subir.
 
 **Límites a tener presentes**: el plan gratuito de Cloudflare tiene cuotas diarias; si algún día se llegan a agotar, el servidor dejaría de responder hasta el día siguiente. Los nombres de otros jugadores se escapan siempre con `esc()` antes de dibujarse.
 
