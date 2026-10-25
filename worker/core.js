@@ -5,11 +5,15 @@
 // jugador solo lo que puede ver (viewFor). Los bots y los jugadores desconectados juegan desde aquí.
 import {newGame,nextRound,drawCard,layDown,attachCard,discard,endTurn,closeRound,playBotSeat,viewFor,validSeats,MAX_SEATS} from '../src/game.js';
 import {effort,thinkTime} from '../src/bots.js';
+import {pts} from '../src/engine.js';
 import {ROSTER,LEVELS,LEVEL_NAMES} from '../src/roster.js';
 
 export const THINK_MAX=7000;      // espera máxima de un bot (ms), igual que el valor por defecto de la app
 export const AWAY_MS=4000;        // un jugador desconectado juega solo, con esta espera
 export const MAX_NAME=12;
+export const LIMITS=[0,30,45,60,90];   // segundos por turno de una persona (0 = sin límite)
+export const DEFAULT_LIMIT=60;
+const STRIKES_AWAY=2;              // tras 2 turnos agotados seguidos, la persona pasa a "ausente" hasta que juegue de nuevo
 const AVATARS=ROSTER.length;
 const hex=n=>Array.from(crypto.getRandomValues(new Uint8Array(n)),b=>b.toString(16).padStart(2,'0')).join('');
 const cleanName=v=>(typeof v=='string'?v:'').replace(/[\u0000-\u001f\u007f<>&"'`]/g,'').trim().slice(0,MAX_NAME)||'Jugador';
@@ -18,7 +22,7 @@ const shuffle=(a,rnd)=>{for(let i=a.length-1;i>0;i--){const j=Math.floor(rnd()*(
 
 export class RoomCore{
  // env: {setTimer(fn,ms)→id, clearTimer(id), rnd?, onChange?()} · onChange se llama tras cada cambio que haya que guardar
- constructor(env){this.env=env;this.rnd=env.rnd||Math.random;this.thinkMax=env.thinkMax||THINK_MAX;this.R=null;this.conns=new Map();this.timer=null;this.think=null;this.pending=[]}
+ constructor(env){this.env=env;this.rnd=env.rnd||Math.random;this.thinkMax=env.thinkMax||THINK_MAX;this.R=null;this.conns=new Map();this.timer=null;this.think=null;this.pending=[];this.limitTimer=null;this.limitKey=null;this.limitAt=0;this.turnId=null;this.turnSeq=0}
 
  // ---- estado guardable ----
  snapshot(){return this.R?JSON.parse(JSON.stringify(this.R)):null}
@@ -56,7 +60,7 @@ export class RoomCore{
  hello(conn,m){
   if(!this.R){
    if(!m.create)return conn.send({t:'err',msg:'Esa sala no existe',code:'nofound'});
-   this.R={code:String(m.code||''),phase:'lobby',seatsN:3,players:[],S:null,seats:null,created:Date.now(),updated:Date.now()}}
+   this.R={code:String(m.code||''),phase:'lobby',seatsN:3,limit:DEFAULT_LIMIT,players:[],S:null,seats:null,created:Date.now(),updated:Date.now()}}
   else if(m.create&&!this.R.players.some(p=>p.token===m.token))return conn.send({t:'err',msg:'Ese código ya está en uso',code:'taken'});
   const R=this.R;let p=typeof m.token=='string'&&R.players.find(x=>x.token===m.token);
   if(p&&R.phase=='playing'&&this.seatOf(p)<0)return conn.send({t:'err',msg:'Saliste de esta partida',code:'left'});
@@ -75,9 +79,11 @@ export class RoomCore{
 
  config(conn,p,m){const R=this.R;if(!p.host)return this.err(conn,'Solo el anfitrión cambia la mesa');
   if(R.phase!='lobby')return this.err(conn,'La partida ya empezó');
-  const n=m.seats;if(!validSeats(n))return this.err(conn,'La mesa es de 2 a 5 jugadores');
-  if(n<R.players.length)return this.err(conn,'Ya hay más jugadores que asientos');
-  R.seatsN=n;this.change();this.broadcast()}
+  if(m.seats===undefined&&m.limit===undefined)return this.err(conn,'Nada que cambiar');
+  if(m.seats!==undefined){const n=m.seats;if(!validSeats(n))return this.err(conn,'La mesa es de 2 a 5 jugadores');
+   if(n<R.players.length)return this.err(conn,'Ya hay más jugadores que asientos');R.seatsN=n}
+  if(m.limit!==undefined){if(!LIMITS.includes(m.limit))return this.err(conn,'Tiempo por turno no válido');R.limit=m.limit}
+  this.change();this.broadcast()}
 
  start(conn,p){const R=this.R;if(!p.host)return this.err(conn,'Solo el anfitrión empieza la partida');
   if(R.phase!='lobby')return this.err(conn,'La partida ya empezó');
@@ -98,6 +104,7 @@ export class RoomCore{
  act(conn,p,fn){const R=this.R;if(R.phase!='playing')return this.err(conn,'No hay partida en curso');
   const seat=this.seatOf(p);if(seat<0||R.seats[seat].bot)return this.err(conn,'No tienes asiento');
   const r=fn(R.S);if(r.err)return this.err(conn,r.err);
+  p.strikes=0; // jugó: deja de estar "ausente"
   this.change();this.broadcast();this.schedule()}
 
  doDraw(S,p,deck){const seat=this.seatOf(p),r=drawCard(S,seat,deck);if(r.err)return r;
@@ -132,14 +139,35 @@ export class RoomCore{
  // ---- bots y jugadores ausentes ----
  clear(){if(this.timer!=null){this.env.clearTimer(this.timer);this.timer=null}this.think=null}
  // Si le toca a un bot (o a una persona desconectada) agenda su jugada para cuando "termine de pensar".
- schedule(){this.clear();const R=this.R;if(!R||R.phase!='playing'||R.S.phase=='roundEnd')return;
+ schedule(){this.clear();const R=this.R;
+  if(!R||R.phase!='playing'||R.S.phase=='roundEnd'){this.clearLimit();return}
   const S=R.S,seat=S.turn,s=R.seats[seat],pl=s.bot?null:R.players.find(x=>x.id===s.pid);
-  const away=!s.bot&&!(pl&&pl.connected);if(!s.bot&&!away)return;
-  const ms=away?AWAY_MS:thinkTime(effort(S,seat),this.thinkMax,this.rnd);
+  const tid=S.round+':'+seat;if(tid!==this.turnId){this.turnId=tid;this.turnSeq=(this.turnSeq||0)+1;this.clearLimit()} // turno nuevo
+  const present=!s.bot&&pl&&pl.connected&&(pl.strikes||0)<STRIKES_AWAY;
+  if(present){ // le toca a una persona conectada: corre su reloj (se conserva si ya estaba corriendo para este turno)
+   const lim=(R.limit||0)*1000,key=this.turnSeq;
+   if(!lim)this.clearLimit();
+   else if(this.limitKey!==key){this.clearLimit();this.limitKey=key;this.limitAt=Date.now()+lim;
+    const t=this.limitTimer=this.env.setTimer(()=>{if(this.limitTimer!==t)return;this.limitTimer=null;this.timeUp(seat,key)},lim)}
+   this.broadcast();return}
+  this.clearLimit();
+  const ms=s.bot?thinkTime(effort(S,seat),this.thinkMax,this.rnd):AWAY_MS;
   this.think={seat,ms,since:Date.now()};
   const token=this.timer=this.env.setTimer(()=>{if(this.timer!==token)return;this.timer=null;this.botMove(seat)},ms);
   this.broadcast()}
- botMove(seat){const R=this.R;if(!R||R.phase!='playing'||R.S.turn!==seat||R.S.phase=='roundEnd')return;
+ clearLimit(){if(this.limitTimer!=null){this.env.clearTimer(this.limitTimer);this.limitTimer=null}this.limitKey=null}
+ // Se acabó el tiempo de una persona: roba del mazo si no había robado y descarta (la carta robada o la de más puntos)
+ timeUp(seat,key){const R=this.R;if(!R||R.phase!='playing'||R.S.turn!==seat||R.S.phase=='roundEnd'||this.limitKey!==key)return;
+  const S=R.S,s=R.seats[seat],pl=R.players.find(x=>x.id===s.pid);this.limitKey=null;if(pl)pl.strikes=(pl.strikes||0)+1;
+  if(S.phase=='draw'){const r=drawCard(S,seat,true);if(r.err)return;
+   if(r.end){closeRound(S,-1);this.change();this.broadcast();this.schedule();return}
+   this.ev({e:'draw',seat,from:'deck'})}
+  const h=S.hands[seat];let w=h.find(c=>c.id===S.drawn);
+  if(!w||(!w.r&&h.length>1))w=[...h].filter(c=>c.r).sort((a,b)=>pts(b.r)-pts(a.r))[0]||h[0];
+  const d=discard(S,seat,w.id);if(d.err)return;this.ev({e:'discard',seat,card:d.card,auto:true});
+  if(d.out)closeRound(S,seat);else if(d.exhausted)closeRound(S,-1);else endTurn(S);
+  this.change();this.broadcast();this.schedule()}
+ botMove(seat){const R=this.R;if(!R||R.phase!='playing'||R.S.turn!==seat||R.S.phase!='draw')return; // un bot solo juega al empezar su turno
   const s=R.seats[seat],style=LEVELS[s.level||'Normal']||LEVELS.Normal;this.think=null;
   const r=playBotSeat(R.S,seat,style);if(r.err)return;
   if(r.drew)this.ev({e:'draw',seat,from:r.drew,card:r.drew=='disc'?r.drewCard:undefined});
@@ -148,13 +176,14 @@ export class RoomCore{
   this.change();this.broadcast();this.schedule()}
 
  // ---- difusión ----
- meta(){const R=this.R;return{code:R.code,phase:R.phase,seatsN:R.seatsN,
+ meta(){const R=this.R;return{code:R.code,phase:R.phase,seatsN:R.seatsN,limit:R.limit,
   players:R.players.map(p=>({id:p.id,name:p.name,avatar:p.avatar,host:!!p.host,connected:p.connected}))}}
  broadcast(){if(!this.R)return;const R=this.R,evs=this.pending;this.pending=[];
   for(const [conn,id] of this.conns){const p=R.players.find(x=>x.id===id);if(!p)continue;
    const msg={t:R.phase=='lobby'?'lobby':'state',room:this.meta(),you:{id:p.id,host:!!p.host}};
    if(R.phase=='playing'){const seat=this.seatOf(p);
-    msg.seat=seat;msg.view=viewFor(R.S,seat);msg.events=evs;msg.think=this.think?{seat:this.think.seat,ms:this.think.ms}:null;
+    msg.seat=seat;msg.view=viewFor(R.S,seat);
+    msg.turn=this.limitKey&&R.S.turn===seat?{limitMs:R.limit*1000,remainMs:Math.max(0,this.limitAt-Date.now())}:null;msg.events=evs;msg.think=this.think?{seat:this.think.seat,ms:this.think.ms}:null;
     msg.seats=R.seats.map(s=>({name:s.name,avatar:s.avatar,bot:s.bot,
      connected:s.bot?true:!!(R.players.find(x=>x.id===s.pid)||{}).connected}))}
    try{conn.send(msg)}catch(e){}}}

@@ -119,3 +119,52 @@ test('snapshot y restore: la partida sigue donde estaba',()=>{
  assert.deepEqual(b.core.R.S.hands,a.core.R.S.hands);
  const c=mkConn();hello(b.core,c,{token:snap.players[0].token});assert.ok(c.last('state'));
  assert.ok(b.core.R.players.filter(p=>p.connected).length==1)});
+
+// ---- límite de tiempo por turno ----
+function esperaHumano(r,cs){const{core}=r;let g=0;while(g++<400){const S=core.R.S,s=core.R.seats[S.turn];if(S.phase=='roundEnd')return false;if(!s.bot&&s.pid!==null)return s;r.fire()}return false}
+
+test('límite por turno: config válida, solo el anfitrión, y se informa en la sala',()=>{
+ const r=lobby(2,3),{core,cs}=r;assert.equal(cs[0].last('lobby').room.limit,60);
+ core.message(cs[0],{t:'config',limit:30});assert.equal(cs[0].last('lobby').room.limit,30);
+ core.message(cs[0],{t:'config',limit:0});assert.equal(cs[1].last('lobby').room.limit,0);
+ const n=cs[0].errs().length;core.message(cs[0],{t:'config',limit:17});core.message(cs[0],{t:'config',limit:'60'});core.message(cs[0],{t:'config'});assert.equal(cs[0].errs().length,n+3);
+ core.message(cs[1],{t:'config',limit:45});assert.match(cs[1].errs().at(-1).msg,/anfitrión/)});
+
+test('límite por turno: al agotarse la persona roba y descarta sola, y el turno pasa',()=>{
+ const r=lobby(1,2),{core,cs,timers}=r;core.message(cs[0],{t:'config',limit:30});core.message(cs[0],{t:'start'});
+ const S=core.R.S;let g=0;while(core.R.seats[S.turn].bot&&g++<10)r.fire();
+ assert.equal(core.R.seats[S.turn].bot,false);
+ const ms=[...timers.values()].map(t=>t.ms);assert.ok(ms.includes(30000),'corre el reloj de 30 s');
+ assert.equal(cs[0].last('state').turn.limitMs,30000);assert.ok(cs[0].last('state').turn.remainMs>0);
+ const yo=S.turn,antes=S.hands[yo].length;
+ // vence el reloj
+ const k=[...timers.keys()].find(i=>timers.get(i).ms===30000);const t=timers.get(k);timers.delete(k);t.fn();
+ assert.notEqual(S.turn,yo,'el turno pasó');assert.equal(S.hands[yo].length,antes,'robó una y descartó una');
+ assert.ok(cs[0].sent.some(m=>m.events&&m.events.some(e=>e.e=='discard'&&e.auto)),'se informa que fue automático');
+ assert.equal(core.R.players[0].strikes,1)});
+
+test('límite por turno: sin límite no corre reloj; actuar a tiempo reinicia las faltas',()=>{
+ const r=lobby(1,2),{core,cs,timers}=r;core.message(cs[0],{t:'config',limit:0});core.message(cs[0],{t:'start'});
+ let g=0;while(core.R.seats[core.R.S.turn].bot&&g++<10)r.fire();
+ assert.ok(![...timers.values()].some(t=>t.ms>=30000),'sin reloj');assert.equal(cs[0].last('state').turn,null);
+ core.R.players[0].strikes=1;jugar(core,cs[0]);assert.equal(core.R.players[0].strikes,0)});
+
+test('límite por turno: el reloj no se reinicia con cada acción del mismo turno',()=>{
+ const r=lobby(1,2),{core,cs,timers}=r;core.message(cs[0],{t:'config',limit:45});core.message(cs[0],{t:'start'});
+ let g=0;while(core.R.seats[core.R.S.turn].bot&&g++<10)r.fire();
+ const at=core.limitAt;assert.ok(at>0);core.message(cs[0],{t:'draw',deck:true});
+ assert.equal(core.limitAt,at,'robar no reinicia el reloj')});
+
+test('dos turnos agotados seguidos: la persona pasa a ausente y juega un bot por ella hasta que vuelva a jugar',()=>{
+ const r=lobby(1,2),{core,cs,timers}=r;core.message(cs[0],{t:'config',limit:30});core.message(cs[0],{t:'start'});
+ const vence=()=>{let g=0;while(core.R.seats[core.R.S.turn].bot&&g++<20)r.fire();
+  const k=[...timers.keys()].find(i=>timers.get(i).ms===30000);if(k===undefined)return false;const t=timers.get(k);timers.delete(k);t.fn();return true};
+ assert.ok(vence());assert.ok(vence());assert.equal(core.R.players[0].strikes,2);
+ let g=0;while(core.R.seats[core.R.S.turn].bot&&g++<20)r.fire();
+ assert.ok([...timers.values()].some(t=>t.ms===AWAY_MS),'ahora espera como ausente (sin reloj de 30 s)');
+ assert.ok(![...timers.values()].some(t=>t.ms===30000))});
+
+test('un bot nunca juega sobre un turno ya empezado por una persona',()=>{
+ const r=lobby(1,2),{core,cs}=r;core.message(cs[0],{t:'start'});let g=0;while(core.R.seats[core.R.S.turn].bot&&g++<10)r.fire();
+ core.message(cs[0],{t:'draw',deck:true});const n=core.R.S.hands[core.R.S.turn].length;
+ core.botMove(core.R.S.turn);assert.equal(core.R.S.hands[core.R.S.turn].length,n,'no robó otra vez')});
