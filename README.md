@@ -36,10 +36,17 @@ Sube la carpeta completa a Cloudflare Pages, Netlify o Vercel. No hay comando de
 Abre la URL publicada: en Android, menú ⋮ > "Instalar app"; en iPhone, Compartir > "Añadir a pantalla de inicio".
 
 ## Al publicar una versión nueva
-Cambia `V` en `sw.js` (por ejemplo `carioca-v41`) para renovar la caché, y si agregas archivos a `src/`, inclúyelos en `FILES`.
+Cambia `V` en `sw.js` (por ejemplo `carioca-v42`) para renovar la caché, y si agregas archivos a `src/`, inclúyelos en `FILES`.
 
 ## Guardado
 La partida se guarda automáticamente en este dispositivo (también durante el turno de los bots) y se puede continuar desde el menú principal. Si el guardado está dañado, se descarta y se empieza una partida nueva.
+
+## Consumo de batería (móvil)
+Al diseñar animaciones ten presente que, mientras algo se anima, el teléfono redibuja la pantalla completa en cada refresco (hasta 120 veces por segundo en un iPhone Pro). Por eso:
+- Nada de `filter: blur()`, `mix-blend-mode` ni animar `box-shadow`, `width` o `background` en bucle; anima solo `transform` y `opacity`.
+- Las animaciones continuas usan `steps()` (por ejemplo, las barras de tiempo avanzan 4 veces por segundo) o son finitas.
+- Las luces de fondo solo se mueven en el menú: con la clase `ingame` en `<body>` quedan quietas.
+- El reloj del turno (`setInterval`) solo funciona mientras hay un turno con tiempo límite.
 
 ## Próximas fases
 2: cuentas, partidas en la nube y ranking. 3: multijugador en línea. Antes de la fase 3, los nombres de otros jugadores deben pasar siempre por `esc()` (`src/safe.js`).

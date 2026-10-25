@@ -76,8 +76,8 @@ function toast(){const n=G.note,nm=NM[n.p];
  return `<div class="toast">${n.kind=='deck'?`<i class="mini"></i><span>${nm} robó una carta del <b>mazo</b></span>`:n.kind=='disc'?`${small(n.card)}<span>${nm} tomó del <b>descarte</b></span>`:`<span>✅ ${nm} se <b>bajó</b></span>`}</div>`}
 let TURN=(()=>{try{const v=localStorage.getItem('carioca:turn');return v==null?0:Math.max(0,+v||0)}catch(e){return 0}})(),tt=0;
 const inTurn=()=>G.phase=='draw'||G.phase=='play';
-function startTurn(){clearTimeout(tt);if(TURN>0&&inTurn()){G.turnStart=Date.now();tt=setTimeout(timeUp,TURN)}else G.turnStart=null}
-function stopTurn(){clearTimeout(tt);G.turnStart=null}
+function startTurn(){clearTimeout(tt);if(TURN>0&&inTurn()){G.turnStart=Date.now();tt=setTimeout(timeUp,TURN);tickOn()}else{G.turnStart=null;tickOff()}}
+function stopTurn(){clearTimeout(tt);G.turnStart=null;tickOff()}
 // Tiempo agotado: roba del mazo si no había robado, devuelve las combinaciones sin bajar y descarta (la carta robada o la de más puntos)
 function timeUp(){if(!inTurn()||G.showScore)return;
  if(G.phase=='draw')take(1);
@@ -92,14 +92,18 @@ function toggleScore(){G.showScore=!G.showScore;
  if(inTurn()){if(G.showScore){clearTimeout(tt);G.left=G.turnStart?Math.max(0,TURN-(Date.now()-G.turnStart)):null}
   else if(TURN>0){const l=G.left??TURN;G.turnStart=Date.now()-(TURN-l);tt=setTimeout(timeUp,l)}else G.turnStart=null}
  render()}
-let lastTick=0;
-setInterval(()=>{const e=document.getElementById('tt');if(e&&G.turnStart&&!G.showScore){const s=Math.max(0,Math.ceil((TURN-(Date.now()-G.turnStart))/1000));e.textContent=s;if(s>0&&s<=5&&s!=lastTick){lastTick=s;play('tick')}}},250);
+// El reloj del turno solo "late" mientras hay un turno con tiempo límite (antes corría siempre, 4 veces por segundo)
+let lastTick=0,tickId=0;
+const tickFn=()=>{if(!G.turnStart||G.showScore||document.hidden)return;const e=document.getElementById('tt');if(e){const s=Math.max(0,Math.ceil((TURN-(Date.now()-G.turnStart))/1000));e.textContent=s;if(s>0&&s<=5&&s!=lastTick){lastTick=s;play('tick')}}};
+const tickOn=()=>{if(!tickId)tickId=setInterval(tickFn,250)},tickOff=()=>{clearInterval(tickId);tickId=0};
 const tots=()=>[0,1,2].map(i=>G.scores.reduce((a,r)=>a+r[i],0));
+// Las barras de tiempo avanzan a 4 pasos por segundo (en vez de un fotograma por cada refresco de pantalla): ahorra GPU y batería
+const stepsOf=ms=>Math.max(1,Math.ceil(ms/250));
 function plate(p){const tm=p==0&&TURN>0&&G.turnStart&&inTurn(),el=G.showScore&&G.left!=null?TURN-G.left:Date.now()-G.turnStart,secs=Math.max(0,Math.ceil((TURN-el)/1000)),tot=tots()[p],act=p?(G.phase=='bots'&&G.turn==p):(G.phase=='draw'||G.phase=='play'),dealer=(G.round+2)%3==p,
  say=p?(G.log.find(l=>l.startsWith(NM[p]))||'').slice(NM[p].length+1):'';
  const wl=G.phase=='roundEnd'&&G.win!=null&&G.win>=0?`<em class="wl ${G.win==p?'win':'lose'}">${G.win==p?'Gana':'Pierde'}</em>`:'';
  const bub=p?(act&&G.thinking?`<div class="bubble talk">${G.say||''}<span class="dots"><i></i><i></i><i></i></span></div>`:say?`<div class="bubble say">${say}</div>`:''):'';
- return `<div class="seat"><div class="av ${act?'turn':''} ${p&&act&&G.thinking?'th':''}" style="--ac2:${COL[p]}">${AVT()[p]}${dealer?'<i class="dlr">D</i>':''}</div>${bub}<div class="plate"><b>${NM[p]}</b><span>${G.hands[p].length} cartas · ${tot} pts${tm?` · <b class="tt" id="tt">${secs}</b> s`:''}</span>${wl}${p&&act&&G.thinking?`<u class="bar" style="animation:tbar ${THINK}ms linear forwards;animation-delay:-${Date.now()-G.thinkStart}ms"></u>`:''}${tm?`<u class="bar" style="animation:tbar ${TURN}ms linear forwards,tcol ${TURN}ms linear forwards;animation-delay:-${el}ms,-${el}ms"></u>`:''}</div></div>`}
+ return `<div class="seat"><div class="av ${act?'turn':''} ${p&&act&&G.thinking?'th':''}" style="--ac2:${COL[p]}">${AVT()[p]}${dealer?'<i class="dlr">D</i>':''}</div>${bub}<div class="plate"><b>${NM[p]}</b><span>${G.hands[p].length} cartas · ${tot} pts${tm?` · <b class="tt" id="tt">${secs}</b> s`:''}</span>${wl}${p&&act&&G.thinking?`<u class="bar" style="animation:tbar ${THINK}ms steps(${stepsOf(THINK)}) forwards;animation-delay:-${Date.now()-G.thinkStart}ms"></u>`:''}${tm?`<u class="bar" style="animation:tbar ${TURN}ms steps(${stepsOf(TURN)}) forwards,tcol ${TURN}ms steps(${stepsOf(TURN)}) forwards;animation-delay:-${el}ms,-${el}ms"></u>`:''}</div></div>`}
 function peek(){G.peek=1;G.showScore=0;render()}
 // FLIP: guarda dónde estaban las cartas de la mano para que se deslicen suavemente a su nuevo sitio
 function flipBefore(){const m=new Map();if(G.flip)document.querySelectorAll('#hand .c').forEach(el=>m.set(el.dataset.id,el.getBoundingClientRect()));G.flip=0;return m}
@@ -173,7 +177,7 @@ const hasSave=()=>!!readSave();
 function initHome(){const home=document.getElementById('home');if(!home)return newGame();
  const saved=hasSave(),$=s=>home.querySelector(s),cont=$('#bCont'),nw=$('#bNew'),snd=$('#bSnd'),pk=$('#picks'),nameIn=$('#pName');
  let menuTimer=0;const showMenu=()=>{clearTimeout(menuTimer);home.classList.add('menu-on')};
- const leave=()=>{home.classList.add('out')};
+ const leave=()=>{home.classList.add('out');document.body.classList.add('ingame')}; // 'ingame' detiene las animaciones de fondo
  const sndLabel=()=>{snd.textContent=isMuted()?'🔇 Sonido: apagado':'🔊 Sonido: activado'};
  pk.innerHTML=ROSTER.map((r,i)=>`<button class="pick" data-me="${i}" type="button" aria-label="Avatar ${i+1}">${roundOf(i)}</button>`).join('');
  const picks=[...pk.children],paintPicks=()=>picks.forEach((b,i)=>b.classList.toggle('on',i==ME));
@@ -181,7 +185,7 @@ function initHome(){const home=document.getElementById('home');if(!home)return n
  nameIn.value=PN=='Tú'?'':PN;nameIn.oninput=saveName;
  cont.hidden=!saved;$('#saveNote').hidden=!saved;nw.classList.toggle('gold',!saved);
  paintPicks();sndLabel();pk.scrollTop=Math.max(0,picks[ME].offsetTop-pk.clientHeight/3);
- openHome=()=>{const sv=hasSave();cont.hidden=!sv;$('#saveNote').hidden=!sv;nw.classList.toggle('gold',!sv);nameIn.value=PN=='Tú'?'':PN;paintPicks();sndLabel();home.classList.add('skip','menu-on');home.classList.remove('out')};
+ openHome=()=>{const sv=hasSave();cont.hidden=!sv;$('#saveNote').hidden=!sv;nw.classList.toggle('gold',!sv);nameIn.value=PN=='Tú'?'':PN;paintPicks();sndLabel();home.classList.add('skip','menu-on');home.classList.remove('out');document.body.classList.remove('ingame')};
  menuTimer=setTimeout(showMenu,2600);
  home.addEventListener('click',e=>{if(!home.classList.contains('menu-on')&&!e.target.closest('.menu')){home.classList.add('skip');showMenu()}});
  pk.onclick=ev=>{const b=ev.target.closest('.pick');if(!b)return;ME=+b.dataset.me;try{localStorage.setItem('carioca:avatar',ME)}catch(e){}unlock();play('click');paintPicks()};

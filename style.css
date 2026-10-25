@@ -28,7 +28,7 @@ tfoot td{font-weight:700}.msg{font-weight:600;color:var(--ac)}
 .av.act{animation:pulse 1s infinite}.nm{font-size:13px;min-width:0}
 .say{font-size:11px;opacity:.85;font-style:italic;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .mm{margin-top:6px;gap:3px}.center{display:flex;gap:14px;justify-content:center;align-items:center;margin-top:10px;padding:10px 0 2px}
-.pile{border-radius:8px;min-width:46px;min-height:66px}.pile.can{animation:glow 1.2s infinite;cursor:pointer}.log{font-size:11px;opacity:.85;max-width:140px}
+.pile{border-radius:8px;min-width:46px;min-height:66px}.pile.can{cursor:pointer}.log{font-size:11px;opacity:.85;max-width:140px}
 .felt .m,.felt2 .m{border-color:#9fd3b5}
 @keyframes deal{from{opacity:0;transform:translateY(-60px) scale(.5)}}
 @keyframes drop{from{opacity:0;transform:translate(-70px,-90px) rotate(-25deg)}}
@@ -53,7 +53,7 @@ h1{display:none}.box{background:#121b2b;border-color:#2c4262;color:#e8eef7}td,th
 .dlr{position:absolute;right:-8px;bottom:-4px;background:#fff;color:#111;border-radius:50%;width:20px;height:20px;font:800 11px/20px system-ui;text-align:center;font-style:normal;box-shadow:0 1px 3px #000}
 .plate{position:relative;overflow:hidden;margin-top:-14px;padding:16px 14px 6px;min-width:120px;max-width:100%;background:linear-gradient(#222d3e,#0e1521);border:1px solid #33425c;border-radius:12px;text-align:center}
 .plate b{display:block;font-size:13px}.plate span{font-size:11px;color:#9fb4cf}
-.bar{position:absolute;left:0;bottom:0;height:3px;background:#ffd640;animation:tbar 8s linear infinite}
+.bar{position:absolute;left:0;bottom:0;width:100%;height:3px;background:#ffd640;transform-origin:0 50%;animation:tbar 8s linear infinite}
 .mz{display:flex;flex-wrap:wrap;gap:4px;min-height:48px;align-content:flex-start}
 .melds2{display:flex;gap:8px;margin-top:8px}.melds2 .mz{flex:1 1 0;min-width:0;overflow:hidden;padding:2px}
 .table .m{border-color:rgba(255,255,255,.35);background:rgba(0,0,0,.2);border-radius:8px}.table .m.st{border-style:solid;border-color:#ffd640}
@@ -70,11 +70,11 @@ h1{display:none}.box{background:#121b2b;border-color:#2c4262;color:#e8eef7}td,th
 .modal{position:fixed;inset:0;background:rgba(0,0,0,.72);display:flex;align-items:center;justify-content:center;padding:16px;z-index:50}
 .sheet{background:#121b2b;border:1px solid #2c4262;border-radius:16px;padding:14px;max-width:480px;width:100%;max-height:85vh;overflow:auto}.sheet h3{margin:0 0 8px}.sheet .row{margin-top:10px}
 @keyframes pulse2{50%{box-shadow:0 0 0 8px rgba(255,214,64,.25),0 0 22px #ffd640}}
-@keyframes tbar{from{width:100%}to{width:0}}
+@keyframes tbar{from{transform:scaleX(1)}to{transform:scaleX(0)}}
 /* ===== Animaciones de los bots ===== */
 .slot{height:36px;width:100%;display:flex;align-items:flex-end;justify-content:center;margin-bottom:2px}
 .think{position:relative;background:#fff;border-radius:18px;padding:8px 14px;margin-bottom:14px;display:flex;gap:4px;box-shadow:0 2px 6px rgba(0,0,0,.4)}
-.think i{width:7px;height:7px;border-radius:50%;background:#555;animation:dot 1.2s infinite}
+.think i{width:7px;height:7px;border-radius:50%;background:#555;animation:dot 1.2s steps(1,end) infinite}
 .think i:nth-child(2){animation-delay:.2s}.think i:nth-child(3){animation-delay:.4s}
 .think::before,.think::after{content:"";position:absolute;left:50%;background:#fff;border-radius:50%}
 .think::after{width:10px;height:10px;bottom:-7px;margin-left:-4px}.think::before{width:6px;height:6px;bottom:-14px;margin-left:-8px}
@@ -147,14 +147,16 @@ body{background:radial-gradient(ellipse at 50% -10%,#2a0f3d 0,#0a0713 55%,#05030
 #app{position:relative;z-index:1}
 /* humo y luces del local */
 #fx{position:fixed;inset:0;z-index:0;overflow:hidden;pointer-events:none}
-#fx .sm{position:absolute;width:70vmax;height:46vmax;border-radius:50%;background:radial-gradient(closest-side,rgba(190,170,255,.2),rgba(190,170,255,0));filter:blur(30px);will-change:transform,opacity;animation:smoke 26s ease-in-out infinite alternate}
+#fx .sm{position:absolute;width:70vmax;height:46vmax;border-radius:50%;background:radial-gradient(closest-side,rgba(190,170,255,.2),rgba(190,170,255,0));will-change:transform,opacity;animation:smoke 26s steps(100) infinite alternate}
 #fx .s1{left:-30vmax;top:8vh}
 #fx .s2{right:-34vmax;top:36vh;animation-duration:32s;animation-delay:-8s;background:radial-gradient(closest-side,rgba(255,60,150,.17),rgba(255,60,150,0))}
 #fx .s3{left:-8vmax;bottom:-22vh;animation-duration:38s;animation-delay:-15s;background:radial-gradient(closest-side,rgba(122,77,255,.2),rgba(122,77,255,0))}
 @keyframes smoke{0%{transform:translate3d(-6vw,2vh,0) scale(1) rotate(0);opacity:.5}50%{transform:translate3d(10vw,-6vh,0) scale(1.25) rotate(8deg);opacity:.95}100%{transform:translate3d(-2vw,-12vh,0) scale(1.05) rotate(-6deg);opacity:.6}}
-#fx .beam{position:absolute;top:-10vh;width:24vmax;height:90vh;background:linear-gradient(rgba(255,46,147,.22),rgba(255,46,147,0) 70%);filter:blur(18px);transform-origin:50% 0;mix-blend-mode:screen;animation:sweep 9s ease-in-out infinite alternate}
+#fx .beam{position:absolute;top:-10vh;width:24vmax;height:90vh;background:linear-gradient(rgba(255,46,147,.22),rgba(255,46,147,0) 70%);-webkit-mask-image:linear-gradient(90deg,transparent,#000 35%,#000 65%,transparent);mask-image:linear-gradient(90deg,transparent,#000 35%,#000 65%,transparent);transform-origin:50% 0;will-change:transform;animation:sweep 9s steps(180) infinite alternate}
 #fx .b1{left:6%}#fx .b2{right:6%;background:linear-gradient(rgba(122,77,255,.26),rgba(122,77,255,0) 70%);animation-delay:-4s}
 @keyframes sweep{from{transform:rotate(-18deg)}to{transform:rotate(18deg)}}
+/* Ahorro de batería: el humo y las luces solo se mueven en el menú; durante la partida quedan quietos */
+body.ingame #fx .sm,body.ingame #fx .beam{animation-play-state:paused}
 /* botones redondos y contrato */
 .hud{gap:10px;align-items:center}
 .rbtn{width:42px;height:42px;flex:none;border-radius:50%;border:2px solid rgba(230,195,92,.8);background:radial-gradient(#2c1f40,#120b1c);color:#f5e9c8;font-size:18px;line-height:1;cursor:pointer;display:grid;place-items:center;box-shadow:0 2px 10px rgba(0,0,0,.6)}
@@ -175,7 +177,7 @@ body{background:radial-gradient(ellipse at 50% -10%,#2a0f3d 0,#0a0713 55%,#05030
 .bubble.talk{position:absolute;left:50%;bottom:6px;transform:translateX(-50%);width:max-content;max-width:150px;white-space:normal;text-overflow:clip;overflow:visible;text-align:center;line-height:1.25;font:600 11px system-ui;padding:5px 9px;background:#fffaf0;color:#2a1a30;border-radius:12px;box-shadow:0 3px 10px rgba(0,0,0,.5);animation:pop .3s;z-index:3}
 .bubble.talk::after{content:"";position:absolute;left:50%;bottom:-5px;margin-left:-5px;border:5px solid transparent;border-bottom:0;border-top-color:#fffaf0}
 .dots{display:inline-flex;gap:3px;margin-left:5px;vertical-align:middle}
-.dots i{width:4px;height:4px;border-radius:50%;background:#7a5a8a;animation:dot 1.2s infinite}.dots i:nth-child(2){animation-delay:.2s}.dots i:nth-child(3){animation-delay:.4s}
+.dots i{width:4px;height:4px;border-radius:50%;background:#7a5a8a;animation:dot 1.2s steps(1,end) infinite}.dots i:nth-child(2){animation-delay:.2s}.dots i:nth-child(3){animation-delay:.4s}
 .msgpill{background:rgba(8,5,14,.6);border-color:rgba(230,195,92,.3)}
 .mine{border-top-color:rgba(230,195,92,.2)}
 .chip{background:#1d1329;border-color:rgba(230,195,92,.45);color:#f1e5c4}
@@ -203,7 +205,7 @@ body{background:radial-gradient(ellipse at 50% -10%,#2a0f3d 0,#0a0713 55%,#05030
 .c.s{border-color:var(--gold);box-shadow:0 0 0 2px var(--gold),0 6px 14px rgba(0,0,0,.5)}
 .c[aria-pressed="true"]{outline:none}
 /* arrastre suave */
-.hand .c{will-change:transform;transition:box-shadow .2s}
+.hand .c{transition:box-shadow .2s}.hand .c.dragging{will-change:transform}
 .hand .c.s{transition:transform .22s cubic-bezier(.2,.9,.3,1.25),box-shadow .2s}
 .hand .c.dragging{z-index:30;box-shadow:0 16px 26px rgba(0,0,0,.6);transition:none!important;cursor:grabbing}
 /* pantalla de inicio */
@@ -252,7 +254,7 @@ body{background:linear-gradient(180deg,rgba(0,0,0,0) 56%,rgba(74,44,24,.9) 100%)
 .av{width:76px;height:76px;border:0;border-radius:0;background:none;box-shadow:none;overflow:visible;z-index:1;filter:drop-shadow(0 6px 6px rgba(0,0,0,.45))}
 .av svg{border-radius:0}
 .av.turn{filter:drop-shadow(0 0 7px rgba(255,214,64,.95)) drop-shadow(0 6px 6px rgba(0,0,0,.4))}
-.av.turn.th{animation:sway 2s ease-in-out infinite}
+/* sin balanceo mientras el bot piensa: una animación continua sobre un elemento con sombra obliga a redibujar la pantalla en cada fotograma */
 .dlr{right:0;top:6px;bottom:auto}
 .plate{z-index:2;margin-top:-8px;padding:12px 12px 6px;min-width:128px;background:linear-gradient(#f2f3f5,#b7b9c0 46%,#8a8d95 54%,#c9cbd1);border:2px solid #4c4f57;border-radius:8px;box-shadow:inset 0 0 0 1px rgba(255,255,255,.7),0 3px 7px rgba(0,0,0,.55);overflow:hidden}
 .plate b{display:block;color:#16171c;font:700 14px Georgia,'Times New Roman',serif;text-shadow:0 1px 0 rgba(255,255,255,.7)}
@@ -273,7 +275,7 @@ body{background:linear-gradient(180deg,rgba(0,0,0,0) 56%,rgba(74,44,24,.9) 100%)
 .table .m.st{outline:2px solid #ffd640;outline-offset:2px;border-radius:6px}
 /* el brillo de los mazos solo rodea la carta */
 .pile.can,.pile.src{animation:none}
-.pile.can .c::after,.pile.src .c::after{content:"";position:absolute;inset:-4px;border-radius:10px;border:2px solid #ffd54a;box-shadow:0 0 12px #ffd54a;animation:glowb 1.2s infinite;pointer-events:none}
+.pile.can .c::after,.pile.src .c::after{content:"";position:absolute;inset:-4px;border-radius:10px;border:2px solid #ffd54a;box-shadow:0 0 12px #ffd54a;animation:glowb 1.2s 3;pointer-events:none}
 @keyframes glowb{50%{opacity:.3}}
 /* pintas más chicas y índice del 10 compacto para que no se mezclen */
 .c .pp{font-size:1.05em}
