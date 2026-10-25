@@ -1,5 +1,6 @@
-import {botPlay,deckDraw,effort,thinkTime} from './bots.js';
-import {SU,RK,pts,CON,desc,shuf,mkDeck,classify,meets,gen,solve,rm,sides,put} from './engine.js';
+import {effort,thinkTime} from './bots.js';
+import {SU,RK,pts,CON,desc,classify,meets,solve,rm,sides} from './engine.js';
+import {deal,drawCard,commitLay,attachCard,discard,botTurn,closeRound,totals,winners,dealerOf} from './game.js';
 import {unlock,play,setMuted,isMuted} from './audio.js';
 import {JOKER} from './joker.js';
 import {ROSTER,LEVELS,bustOf,roundOf,pickBots,fallbackBust,fallbackRound} from './roster.js';
@@ -15,29 +16,26 @@ let SESSION=0,openHome=()=>{};
 let G={round:0,scores:[],sort:true,log:[]};
 const reqOf=()=>[...CON[G.round]].sort((a,b)=>b-a);
 const log=t=>{G.log.unshift(t);G.log=G.log.slice(0,4)};
-const drawDeck=()=>deckDraw(G);
 const seats=(n,f)=>Array.from({length:n},f);
-function start(){const n=G.n,d=mkDeck();G.hands=seats(n,()=>d.splice(0,12));G.deck=d;G.disc=[d.pop()];
- G.down=seats(n,()=>0);G.taken=seats(n,()=>[]);G.reshuf=0;G.justDown=0;G.melds=seats(n,()=>[]);G.staged=[];G.sel=new Set();G.phase='draw';G.log=[];G.dealAnim=1;G.win=null;play('deal');G.peek=0;G.showScore=0;G.msg='Tu turno: roba del mazo o del descarte.';
+function start(){const n=G.n;deal(G); // reparto y estado de la mesa: src/game.js
+ G.staged=[];G.sel=new Set();G.log=[];G.dealAnim=1;play('deal');G.peek=0;G.showScore=0;G.msg='Tu turno: roba del mazo o del descarte.';
  const st=G.round%n;if(st){G.phase='bots';G.turn=(st+n-1)%n;G.pend=st;G.msg='';render();advance()}else{startTurn();render()}}
 async function advance(){const my=SESSION,n=G.n;stopTurn();G.phase='bots';G.turn=(G.turn+1)%n;
  while(G.turn!=0){const p=G.turn;G.pend=p;G.thinking=true;G.say=phrase(G,p);
   // El bot juega cuando termina de "pensar": las jugadas fáciles salen antes y algunos turnos al azar tardan el máximo (THINK)
   G.thinkMs=thinkTime(effort(G,p),THINK);G.thinkStart=Date.now();render();await sleep(G.thinkMs);if(my!=SESSION)return;G.thinking=false;
-  const top0=G.disc[G.disc.length-1],dk0=G.deck.length,r=botMove(p);G.pend=(p+1)%n;if(G.phase=='roundEnd')return;if(!r.drew||G.reshuf>=2){endRound(-1);return}
+  const top0=G.disc[G.disc.length-1],dk0=G.deck.length,r=botMove(p);G.pend=(p+1)%n;if(G.phase=='roundEnd')return;if(r.end===-1){endRound(-1);return}
   G.vis={top:top0,deck:dk0};G.note={p,kind:r.drew,card:r.drewCard};G.fly={p,src:r.drew,card:r.drewCard};play(r.drew=='disc'?'flip':'draw');render();await sleep(1300);if(my!=SESSION)return;
   G.vis=null;G.dropId=r.discard&&r.discard.id;G.note=r.laid?{p,kind:'lay'}:null;if(r.laid)play('down');setTimeout(()=>play('discard'),r.laid?450:0);render();await sleep(1300);if(my!=SESSION)return;G.turn=(G.turn+1)%n}
  G.note=null;G.phase='draw';G.msg='Tu turno: roba del mazo o del descarte.';startTurn();play('turn');render()}
-function attach(p,c){for(const pl of G.melds)for(const m of pl){const s=sides(m,c);if(s.length){put(m,c,s[0]);return true}}return false}
-function botMove(p){const r=botPlay(G,p,(q,m,c)=>log(NM[q]+' '+m+(c?' '+cn(c):'')),LEVELS[G.bots[p].lvl]);if(r.out){if(r.discard)G.dropId=r.discard.id;endRound(p)}return r}
-const attachTry=c=>attach(0,c);
-function endRound(w){stopTurn();const row=G.hands.map(h=>h.reduce((a,c)=>a+pts(c.r),0));G.scores.push(row);G.phase='roundEnd';G.win=w;if(G.round==9)finish();if(w==0)play('win');else if(w>0)play('lose');
+function botMove(p){const r=botTurn(G,p,LEVELS[G.bots[p].lvl],(q,m,c)=>log(NM[q]+' '+m+(c?' '+cn(c):'')));if(r.out){if(r.discard)G.dropId=r.discard.id;endRound(p)}return r}
+function endRound(w){stopTurn();closeRound(G,w);if(G.round==9)finish();if(w==0)play('win');else if(w>0)play('lose');
  G.msg=w<0?'Se acabó el mazo: nadie salió. Se cuentan las cartas en mano.':(w?NM[w]+' se queda':'Te quedas')+' sin cartas y gana la ronda.';render()}
 const cn=c=>c.r?RK[c.r]+SU[c.s]:'🃏';
 const me=()=>G.phase=='play'&&G.turn==0;
 function sel(id){if(!me())return;play('select');G.choose=null;G.sel.has(id)?G.sel.delete(id):G.sel.add(id);render()}
-function take(deck){if(G.phase!='draw')return;unlock();play(deck?'draw':'flip');const c=deck?drawDeck():G.disc.pop();if(!c){endRound(-1);return} // mazo y descarte agotados
- if(!deck)G.taken[0].push(c);G.drawn=c.id;G.justDown=0;G.hands[0].push(c);G.fresh=new Set([c.id]);G.phase='play';G.turn=0;G.msg='Arma combinaciones, pega cartas o descarta una.';render()}
+function take(deck){if(G.phase!='draw')return;unlock();play(deck?'draw':'flip');G.turn=0;const r=drawCard(G,0,deck);if(r.err)return;if(r.end){endRound(-1);return} // mazo y descarte agotados
+ G.fresh=new Set([r.card.id]);G.msg='Arma combinaciones, pega cartas o descarta una.';render()}
 const picked=()=>G.hands[0].filter(c=>G.sel.has(c.id));
 function armar(){if(!me()||G.down[0])return;const m=classify(picked());
  if(!m){play('error');G.msg='Inválida: trío = mismo número (3+); escala = mismo palo consecutivo (4+); comodines menos que naturales.';return render()}
@@ -48,18 +46,21 @@ function bajar(){if(!me()||G.down[0])return;const p=picked();
   if(m){G.hands[0]=rm(G.hands[0],m.cs);G.staged.push(m);G.sel=new Set()}
   else if(!G.staged.length){const s=solve(p,reqOf());if(s){s.forEach(x=>G.hands[0]=rm(G.hands[0],x));G.staged=s.map(m=>classify(m,m.st0));G.sel=new Set()}}}
  if(!meets(G.staged,CON[G.round])){play('error');G.msg='Aún no cumples el contrato ('+desc(CON[G.round])+'). Llevas '+G.staged.length+' combinación(es) armada(s).';return render()}
- play('down');G.melds[0]=G.staged;G.staged=[];G.down[0]=1;log('Te bajaste');G.justDown=1;G.msg='¡Bajado! Para terminar tu jugada, descarta una carta. Podrás pegar cartas desde tu próximo turno.';if(!G.hands[0].length)return endRound(0);render()}
+ G.turn=0;const lay=commitLay(G,0,G.staged);if(lay.err){play('error');G.msg=lay.err;return render()}
+ play('down');G.staged=[];log('Te bajaste');G.msg='¡Bajado! Para terminar tu jugada, descarta una carta. Podrás pegar cartas desde tu próximo turno.';if(!G.hands[0].length)return endRound(0);render()}
 function pegar(p,i){if(!me()||!G.down[0])return;if(G.justDown){G.msg='No puedes pegar cartas en el turno en que te bajas: descarta para terminar tu jugada.';return render()}if(picked().length!=1)return;const c=picked()[0],m=G.melds[p][i],s=sides(m,c);
  if(!s.length){G.msg='Esa carta no encaja ahí.';return render()}
  if(s.length>1&&!c.r){G.choose={p,i,id:c.id};G.msg='';return render()}
  doPut(p,i,c,s[0])}
-function doPut(p,i,c,sd){play('lay');put(G.melds[p][i],c,sd);G.hands[0]=rm(G.hands[0],[c]);G.sel=new Set();G.choose=null;if(!G.hands[0].length)return endRound(0);render()}
+function doPut(p,i,c,sd){G.turn=0;const r=attachCard(G,0,p,i,c.id,sd);if(r.err){G.msg=r.err;return render()}
+ play('lay');G.sel=new Set();G.choose=null;if(r.out)return endRound(0);render()}
 function elegir(sd){const x=G.choose;doPut(x.p,x.i,G.hands[0].find(c=>c.id==x.id),sd)}
 function chooser(){const m=G.melds[G.choose.p][G.choose.i],e=(m.st+m.len-2)%13+1;
  return `<div class="box row"><span>Comodín en la escala (${RK[m.st]} … ${RK[e]}): ¿dónde va?</span><button class="b" onclick="elegir('s')">Al inicio</button><button class="b" onclick="elegir('e')">Al final</button><button class="b g" onclick="cancelar()">Cancelar</button></div>`}
 function descartar(){if(!me())return;if(G.staged.length){G.msg='Tienes combinaciones sin bajar (Deshacer o Bajarme).';return render()}
  const p=picked();if(p.length!=1){play('error');G.msg='Elige 1 carta para descartar.';return render()}
- play('discard');G.hands[0]=rm(G.hands[0],p);G.disc.push(p[0]);G.dropId=p[0].id;G.justDown=0;G.sel=new Set();if(!G.hands[0].length)return endRound(0);if(G.reshuf>=2)return endRound(-1);advance()}
+ G.turn=0;const r=discard(G,0,p[0].id);if(r.err){play('error');G.msg=r.err;return render()}
+ play('discard');G.dropId=p[0].id;G.sel=new Set();if(r.out)return endRound(0);if(r.exhausted)return endRound(-1);advance()}
 function next(){if(G.round==9){G={round:0,scores:[],sort:true,log:[]};setBots(pickBots(DIFF,ME,NB));setMe()}else G.round++;start()}
 // Disposición clásica de las pintas (x, y en %) como en un mazo Bicycle
 const PIPS={2:[[50,22],[50,78]],3:[[50,22],[50,50],[50,78]],4:[[36,22],[64,22],[36,78],[64,78]],5:[[36,22],[64,22],[50,50],[36,78],[64,78]],6:[[36,22],[64,22],[36,50],[64,50],[36,78],[64,78]],7:[[36,22],[64,22],[50,36],[36,50],[64,50],[36,78],[64,78]],8:[[36,22],[64,22],[50,36],[36,50],[64,50],[50,64],[36,78],[64,78]],9:[[36,22],[64,22],[36,40],[64,40],[50,50],[36,60],[64,60],[36,78],[64,78]],10:[[36,22],[64,22],[50,30],[36,40],[64,40],[36,60],[64,60],[50,70],[36,78],[64,78]]};
@@ -99,10 +100,10 @@ function toggleScore(){G.showScore=!G.showScore;
 let lastTick=0,tickId=0;
 const tickFn=()=>{if(!G.turnStart||G.showScore||document.hidden)return;const e=document.getElementById('tt');if(e){const s=Math.max(0,Math.ceil((TURN-(Date.now()-G.turnStart))/1000));e.textContent=s;if(s>0&&s<=5&&s!=lastTick){lastTick=s;play('tick')}}};
 const tickOn=()=>{if(!tickId)tickId=setInterval(tickFn,250)},tickOff=()=>{clearInterval(tickId);tickId=0};
-const tots=()=>seats(G.n,(_,i)=>G.scores.reduce((a,r)=>a+r[i],0));
+const tots=()=>totals(G);
 // Las barras de tiempo avanzan a 4 pasos por segundo (en vez de un fotograma por cada refresco de pantalla): ahorra GPU y batería
 const stepsOf=ms=>Math.max(1,Math.ceil(ms/250));
-function plate(p){const tm=p==0&&TURN>0&&G.turnStart&&inTurn(),el=G.showScore&&G.left!=null?TURN-G.left:Date.now()-G.turnStart,secs=Math.max(0,Math.ceil((TURN-el)/1000)),tot=tots()[p],act=p?(G.phase=='bots'&&G.turn==p):(G.phase=='draw'||G.phase=='play'),dealer=(G.round+G.n-1)%G.n==p,
+function plate(p){const tm=p==0&&TURN>0&&G.turnStart&&inTurn(),el=G.showScore&&G.left!=null?TURN-G.left:Date.now()-G.turnStart,secs=Math.max(0,Math.ceil((TURN-el)/1000)),tot=tots()[p],act=p?(G.phase=='bots'&&G.turn==p):(G.phase=='draw'||G.phase=='play'),dealer=dealerOf(G)==p,
  say=p?(G.log.find(l=>l.startsWith(NM[p]))||'').slice(NM[p].length+1):'';
  const wl=G.phase=='roundEnd'&&G.win!=null&&G.win>=0?`<em class="wl ${G.win==p?'win':'lose'}">${G.win==p?'Gana':'Pierde'}</em>`:'';
  const bub=p?(act&&G.thinking?`<div class="bubble talk">${G.say||''}<span class="dots"><i></i><i></i><i></i></span></div>`:say?`<div class="bubble say">${say}</div>`:''):'';
@@ -172,7 +173,7 @@ function restore(){const s=readSave();if(!s)return false;
  setBots(okBots?G.bots:[null,...[0,6,1,2].slice(0,G.n-1).map(id=>({id,lvl:'Normal'}))]);if(G.meId!=null&&ROSTER[G.meId])ME=G.meId;NM[0]=esc(G.meName||'Tú');return true}
 function loadStats(){try{return Object.assign(EMPTY(),JSON.parse(localStorage.getItem(STATS)))}catch(e){return EMPTY()}}
 function finish(){if(G.statsDone)return;G.statsDone=1;const t=tots(),s=loadStats();
- s.played++;if(t[0]===Math.min(...t)&&t.filter(x=>x===t[0]).length===1)s.won++;s.best=s.best==null?t[0]:Math.min(s.best,t[0]);
+ s.played++;const w=winners(G);if(w.length===1&&w[0]===0)s.won++;s.best=s.best==null?t[0]:Math.min(s.best,t[0]);
  s.last=[{d:new Date().toISOString().slice(0,10),t,n:NM.slice(1)},...s.last].slice(0,5);try{localStorage.setItem(STATS,JSON.stringify(s))}catch(e){}}
 function statsBox(){const s=loadStats();return `<div class="box"><b>Estadísticas</b> <span class="mu">(guardadas en este dispositivo)</span><div>Partidas: ${s.played} · Ganadas: ${s.won} · Mejor puntaje: ${s.best==null?'—':s.best}</div>${s.last.map(g=>`<div class="mu">${esc(g.d)}: Tú ${esc(g.t[0])}${g.t.slice(1).map((x,i)=>` · ${esc((g.n||['Ana','Beto'])[i]||'Bot')} ${esc(x)}`).join('')}</div>`).join('')}</div>`}
 // si una imagen de avatar no carga, se cambia por el avatar SVG de respaldo
