@@ -40,7 +40,7 @@ Sube la carpeta completa a Cloudflare Pages, Netlify o Vercel. No hay comando de
 Abre la URL publicada: en Android, menú ⋮ > "Instalar app"; en iPhone, Compartir > "Añadir a pantalla de inicio".
 
 ## Al publicar una versión nueva
-Cambia `V` en `sw.js` (por ejemplo `carioca-v51`) para renovar la caché, sube la versión visible en `index.html` (etiqueta "Versión" del menú) y en `package.json`, y si agregas archivos a `src/`, inclúyelos en `FILES`.
+Cambia `V` en `sw.js` (por ejemplo `carioca-v52`) para renovar la caché, sube la versión visible en `index.html` (etiqueta "Versión" del menú) y en `package.json`, y si agregas archivos a `src/`, inclúyelos en `FILES`.
 
 ## Tamaño de la mesa
 El menú principal elige cuántos rivales hay (1 a 4, por defecto 2). Siempre se juega con 2 mazos y 4 comodines (108 cartas) y 12 cartas por jugador; el que reparte rota con la ronda y el primero en jugar es el siguiente. Todo el estado usa `G.n` (jugadores en la mesa) y el asiento 0 es siempre el jugador.

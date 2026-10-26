@@ -141,11 +141,14 @@ function fitHome(){const h=document.getElementById('home'),b=h&&h.querySelector(
  s=Math.min(1,av/b.offsetHeight,aw/b.offsetWidth);if(s>=.995)return;s=Math.max(.5,s);
  const top=b.getBoundingClientRect().top,dy=(h.clientHeight-b.offsetHeight*s)/2-top;b.style.transform=`translateY(${dy.toFixed(1)}px) scale(${s.toFixed(3)})`}
 function keepMineVisible(){const t=document.querySelector('.table');if(t&&document.querySelector('.mine')&&t.scrollHeight>t.clientHeight+2)t.scrollTop=t.scrollHeight}
+// Disposición de los rivales (arriba → abajo). Tú estás abajo y el turno pasa al asiento siguiente, en sentido horario:
+// de ti sube por la izquierda, cruza arriba y baja por la derecha.
+const ROWS=[[[1]],[[1,2]],[[2],[1,3]],[[2,3],[1,4]]];
 function render(){
  const flipPrev=flipBefore();
  const h=G.hands[0],tot=tots(),end=G.phase=='roundEnd',fin=end&&G.round==9,top=G.vis?G.vis.top:G.disc[G.disc.length-1],can=G.phase=='draw',mine=me();
  const W=typeof innerWidth=='number'?innerWidth:400,avail=Math.min(W,560)-30,n=h.length,cw=W<=390?44:52,ov=n>1?Math.min(cw-14,Math.max(0,Math.round((n*cw-avail)/(n-1)))):0;
- const rows=[];for(let p=1;p<G.n;p+=2)rows.push(p+1<G.n?[p,p+1]:[p]); // los rivales se muestran de a dos por fila
+ const rows=ROWS[G.n-2]; // los rivales se ubican para que el turno avance en sentido horario (ver ROWS)
  const hint=G.round>7?' · '+['A–K, cualquier palo, con comodines','A–K de un solo palo, sin comodines'][G.round-8]:'';
  const t=`<table><tr><th>#</th><th>Contrato</th>${NM.map(x=>`<th>${x}</th>`).join('')}</tr>`+G.scores.map((r,i)=>`<tr><td>${i+1}</td><td>${desc(CON[i])}</td>${r.map(x=>`<td>${x}</td>`).join('')}</tr>`).join('')+`<tfoot><tr><td></td><td>Total</td>${tot.map(x=>`<td>${x}</td>`).join('')}</tr></tfoot></table>`;
  const btn=(c,f,l,on)=>`<button class="act ${c}" ${on?'':'disabled'} onclick="${f}()">${l}</button>`;
