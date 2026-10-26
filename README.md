@@ -9,6 +9,7 @@ Juego de carioca para 1 jugador contra 1 a 4 bots (mesas de 2 a 5 jugadores), co
 - `src/bots.js`: jugadores virtuales (solo usan información pública; el reparto y los desempates son aleatorios).
 - `src/app.js`: estado de la partida, turnos, pantalla, guardado y estadísticas (localStorage).
 - `src/safe.js`: escapado de nombres para HTML y validación de la partida guardada.
+- `src/morph.js`: redibujado incremental del DOM: solo cambia lo que cambió, para que avatares, globos y barras no parpadeen ni reinicien sus animaciones.
 - `src/online.js`, `src/net.js`, `src/config.js`: cliente del multijugador (traduce el estado del servidor a tu vista, WebSocket con reconexión y la dirección del servidor).
 - `worker/`: servidor de Cloudflare (`core.js` = lógica de la sala, `index.js` = Worker y Durable Object). Config en `wrangler.toml`.
 - `src/roster.js`, `src/avatars.js`, `src/lines.js`: jugadores, avatares (con respaldo SVG) y frases de los bots.
@@ -39,7 +40,7 @@ Sube la carpeta completa a Cloudflare Pages, Netlify o Vercel. No hay comando de
 Abre la URL publicada: en Android, menú ⋮ > "Instalar app"; en iPhone, Compartir > "Añadir a pantalla de inicio".
 
 ## Al publicar una versión nueva
-Cambia `V` en `sw.js` (por ejemplo `carioca-v49`) para renovar la caché, sube la versión visible en `index.html` (etiqueta "Versión" del menú) y en `package.json`, y si agregas archivos a `src/`, inclúyelos en `FILES`.
+Cambia `V` en `sw.js` (por ejemplo `carioca-v50`) para renovar la caché, sube la versión visible en `index.html` (etiqueta "Versión" del menú) y en `package.json`, y si agregas archivos a `src/`, inclúyelos en `FILES`.
 
 ## Tamaño de la mesa
 El menú principal elige cuántos rivales hay (1 a 4, por defecto 2). Siempre se juega con 2 mazos y 4 comodines (108 cartas) y 12 cartas por jugador; el que reparte rota con la ronda y el primero en jugar es el siguiente. Todo el estado usa `G.n` (jugadores en la mesa) y el asiento 0 es siempre el jugador.

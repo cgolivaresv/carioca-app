@@ -13,7 +13,7 @@ const newCode=()=>Array.from(crypto.getRandomValues(new Uint8Array(4)),b=>LETTER
 // Las páginas oficiales siempre se aceptan; ALLOWED_ORIGINS (wrangler.toml) puede sumar otras, por ejemplo para pruebas locales
 const BASE_ORIGINS=['https://cgolivaresv.github.io'];
 const allowed=env=>[...new Set([...BASE_ORIGINS,...(env.ALLOWED_ORIGINS||'').split(',').map(s=>s.trim()).filter(Boolean)])];
-const VERSION='0.5.0'; // no se exporta: un Worker solo puede exportar manejadores y clases
+const VERSION='0.5.1'; // no se exporta: un Worker solo puede exportar manejadores y clases
 function cors(req,env){const o=req.headers.get('Origin');
  return o&&allowed(env).includes(o)?{'Access-Control-Allow-Origin':o,'Vary':'Origin'}:{}}
 const json=(o,req,env,status=200)=>new Response(JSON.stringify(o),{status,headers:{'Content-Type':'application/json','Cache-Control':'no-store',...cors(req,env)}});

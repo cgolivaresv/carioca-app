@@ -9,6 +9,7 @@ import {esc,validSave} from './safe.js';
 import {localPatch,toSeat,toLocal} from './online.js';
 import {openRoom,newCode,savedRoom,forgetRoom} from './net.js';
 import {serverUrl} from './config.js';
+import {morph} from './morph.js';
 // Los nombres se escapan al asignarlos: NM se inserta en innerHTML en toda la pantalla
 const NM=['Tú','Ana','Beto']; // un nombre por asiento: su largo siempre es G.n (2 a 5)
 // Fija los rivales de la partida (G.bots guarda solo el id del roster y el nivel; el asiento 0 es el jugador)
@@ -113,7 +114,7 @@ function plate(p){const T=LIM(),tm=p==0&&T>0&&G.turnStart&&inTurn(),el=G.showSco
  say=p?(G.log.find(l=>l.startsWith(NM[p]))||'').slice(NM[p].length+1):'';
  const wl=G.phase=='roundEnd'&&G.win!=null&&G.win>=0?`<em class="wl ${G.win==p?'win':'lose'}">${G.win==p?'Gana':'Pierde'}</em>`:'';
  const bub=p?(act&&G.thinking?`<div class="bubble talk">${G.say||''}<span class="dots"><i></i><i></i><i></i></span></div>`:say?`<div class="bubble say">${say}</div>`:''):'';
- return `<div class="seat"><div class="av ${act?'turn':''} ${p&&act&&G.thinking?'th':''}" style="--ac2:${COL[p]}">${AVT()[p]}${dealer?'<i class="dlr">D</i>':''}</div>${bub}<div class="plate"><b>${NM[p]}</b><span>${G.hands[p].length} cartas · ${tot} pts${tm?` · <b class="tt" id="tt">${secs}</b> s`:''}</span>${wl}${p&&act&&G.thinking?`<u class="bar" style="animation:tbar ${G.thinkMs||THINK}ms steps(${stepsOf(G.thinkMs||THINK)}) forwards;animation-delay:-${Date.now()-G.thinkStart}ms"></u>`:''}${tm?`<u class="bar" style="animation:tbar ${T}ms steps(${stepsOf(T)}) forwards,tcol ${T}ms steps(${stepsOf(T)}) forwards;animation-delay:-${el}ms,-${el}ms"></u>`:''}</div></div>`}
+ return `<div class="seat"><div class="av ${act?'turn':''} ${p&&act&&G.thinking?'th':''}" style="--ac2:${COL[p]}">${AVT()[p]}${dealer?'<i class="dlr">D</i>':''}</div>${bub}<div class="plate"><b>${NM[p]}</b><span>${G.hands[p].length} cartas · ${tot} pts${tm?` · <b class="tt" id="tt">${secs}</b> s`:''}</span>${wl}${p&&act&&G.thinking?`<u class="bar" data-keep="th${G.thinkStart}" style="animation:tbar ${G.thinkMs||THINK}ms steps(${stepsOf(G.thinkMs||THINK)}) forwards;animation-delay:-${Date.now()-G.thinkStart}ms"></u>`:''}${tm?`<u class="bar" data-keep="tt${G.turnStart}-${T}" style="animation:tbar ${T}ms steps(${stepsOf(T)}) forwards,tcol ${T}ms steps(${stepsOf(T)}) forwards;animation-delay:-${el}ms,-${el}ms"></u>`:''}</div></div>`}
 function peek(){G.peek=1;G.showScore=0;render()}
 // FLIP: guarda dónde estaban las cartas de la mano para que se deslicen suavemente a su nuevo sitio
 function flipBefore(){const m=new Map();if(G.flip)document.querySelectorAll('#hand .c').forEach(el=>m.set(el.dataset.id,el.getBoundingClientRect()));G.flip=0;return m}
@@ -123,6 +124,17 @@ function flipAfter(m){if(!m.size)return;document.querySelectorAll('#hand .c').fo
 // Ajusta el solapamiento de la mano midiendo el ancho real de las cartas y del contenedor
 function fitHand(){const hd=document.getElementById('hand');if(!hd)return;const cs=hd.children,n=cs.length;if(n<2)return;
  const cw=cs[0].offsetWidth,avail=hd.clientWidth-4;hd.style.setProperty('--ov',Math.min(cw-14,Math.max(0,(n*cw-avail)/(n-1))).toFixed(1)+'px')}
+// Si la mesa no cabe (muchas combinaciones bajadas), achica avatares y cartas de la mesa (--k) hasta que todo se vea
+function fitTable(){const t=document.querySelector('.table'),ap=document.getElementById('app');if(!t)return;let k=1;ap.style.removeProperty('--k');delete ap.dataset.tight;
+ const over=()=>t.scrollHeight-t.clientHeight>1||t.scrollWidth-t.clientWidth>1;
+ for(let i=0;i<14&&k>.34&&over();i++){k=Math.max(.34,k-.06);ap.style.setProperty('--k',k.toFixed(2));if(k<.75)ap.dataset.tight=1}}
+// Los globos de frase se desplazan lo justo para no salirse de la pantalla
+function fitBubbles(){const bs=document.querySelectorAll('.bubble');if(!bs.length)return;const a=document.getElementById('app').getBoundingClientRect();
+ bs.forEach(b=>{b.style.removeProperty('--bx');const r=b.getBoundingClientRect();let dx=0;
+  if(r.left<a.left+6)dx=a.left+6-r.left;else if(r.right>a.right-6)dx=a.right-6-r.right;
+  if(dx){const m=Math.max(0,r.width/2-14);dx=Math.max(-m,Math.min(m,dx));b.style.setProperty('--bx',dx.toFixed(1)+'px')}
+  const tb=document.querySelector('.table'),top=tb?tb.getBoundingClientRect().top+4:a.top;b.style.removeProperty('--by');
+  if(r.top<top)b.style.setProperty('--by',(top-r.top).toFixed(1)+'px')})}
 function keepMineVisible(){const t=document.querySelector('.table');if(t&&document.querySelector('.mine')&&t.scrollHeight>t.clientHeight+2)t.scrollTop=t.scrollHeight}
 function render(){
  const flipPrev=flipBefore();
@@ -135,15 +147,15 @@ function render(){
  const nextBtn=()=>{const w=NET&&!(NET.you&&NET.you.host);return btn('go','next',w?'Espera al anfitrión…':fin?'Jugar de nuevo':'Siguiente ronda',!w)};
  const bar=end?nextBtn():btn('gh','deshacer','Deshacer',mine&&G.staged.length)+btn('blue','armar','Armar',mine&&!G.down[0])+btn('go','bajar','Bajarme',mine&&!G.down[0])+btn('red','descartar','Descartar',mine);
  const modal=G.confirmExit?`<div class="modal"><div class="sheet"><h3>${NET?'¿Salir de la sala?':'¿Salir de la partida?'}</h3><p class="mu" style="font-size:14px;line-height:1.5">${NET?'Un bot ocupará tu lugar y no podrás volver a esta partida.':'Puedes guardar la partida y continuarla después desde el menú principal, o abandonarla para empezar una nueva.'}</p><div class="col">${NET?'<button class="act red" onclick="abandon()">Salir de la sala</button>':'<button class="act go" onclick="exitMenu()">Guardar y salir al menú</button><button class="act red" onclick="abandon()">Abandonar y empezar de nuevo</button>'}<button class="act gh" onclick="keepPlaying()">Seguir jugando</button></div></div></div>`:G.showScore||(end&&!G.peek)?`<div class="modal"><div class="sheet"><h3>${fin?(tot.filter(x=>x===Math.min(...tot)).length>1?'Fin del juego · empate': 'Fin del juego · gana '+NM[tot.indexOf(Math.min(...tot))]):end?G.msg:'Puntaje'}</h3>${t}${statsBox()}${NET?'':turnChips()+thinkChips()}<div class="row" style="margin-top:12px"><button class="chip" onclick="askExit()">🏠 Menú principal / abandonar partida</button></div><div class="row">${end?nextBtn()+`<button class="chip" onclick="peek()">Ver mesa</button>`:`<button class="act go" onclick="toggleScore()">Cerrar</button>`}</div></div></div>`:'';
- document.getElementById('app').innerHTML=`<div class="hud"><button class="rbtn" onclick="toggleScore()" aria-label="Puntaje">☰</button><div class="contract"><small>Ronda ${G.round+1} de 10</small><b>${desc(CON[G.round])}${hint}</b></div><button class="rbtn" onclick="toggleSound()" aria-label="${isMuted()?'Activar sonido':'Silenciar'}">${isMuted()?'🔇':'🔊'}</button></div>
+ morph(document.getElementById('app'),`<div class="hud"><button class="rbtn" onclick="toggleScore()" aria-label="Puntaje">☰</button><div class="contract"><small>Ronda ${G.round+1} de 10</small><b>${desc(CON[G.round])}${hint}</b></div><button class="rbtn" onclick="toggleSound()" aria-label="${isMuted()?'Activar sonido':'Silenciar'}">${isMuted()?'🔇':'🔊'}</button></div>
  <div class="table${rows.length>1?' t4':''}">${G.fly?flyEl():''}${G.note?toast():''}${rows.map((r,i)=>`<div class="seats${r.length<2?' solo':''}${i?' b2':''}">${r.map(p=>plate(p)).join('')}</div>
  <div class="melds2${r.length<2?' solo':''}${i?' b2':''}">${r.map(p=>`<div class="mz${G.melds[p].length>2?' dense':''}">${mel(p,G.melds[p])}</div>`).join('')}</div>`).join('\n')}
  <div class="center"><div class="piles"><div class="pile ${can?'can':''} ${G.note&&G.note.kind=='deck'?'src':''}" onclick="take(1)"><div class="stk" style="--th:${Math.min(12,Math.max(3,Math.round((G.vis?G.vis.deck:G.deck.length)/9)))}px"><div class="c back"><span class="cnt">${G.vis?G.vis.deck:G.deck.length}</span></div></div><small>MAZO</small></div><div class="pile ${can?'can':''} ${G.note&&G.note.kind=='disc'?'src':''}" onclick="take(0)"><div class="stk" style="--th:${Math.min(10,Math.max(2,Math.round(G.disc.length/4)))}px">${top?card(top,G.dropId==top.id?'drop':''):'<div class="c"></div>'}</div><small>DESCARTE</small></div></div><div class="msgpill">${NET&&NET.status!='open'?'⚠ Sin conexión, reconectando…':G.msg||G.log[0]||'…'}</div></div>
  ${G.melds[0].length+G.staged.length?`<div class="mine"><div class="mz${G.melds[0].length+G.staged.length>4?' dense':''}">${mel(0,G.melds[0])}${G.staged.map(m=>`<div class="m st">${m.cs.map(small).join('')}</div>`).join('')}</div></div>`:''}</div>
  <div class="hero"><button class="chip sortb" onclick="ordenar('p')">♠ Palo</button>${plate(0)}<button class="chip sortb" onclick="ordenar('n')">A Número</button></div>${G.choose?chooser():''}
  <div id="hand" class="hand" style="--ov:${ov}px">${h.map((c,i)=>card(c,(G.sel.has(c.id)?'s ':'')+(G.dealAnim||G.fresh&&G.fresh.has(c.id)?'deal':''),G.dealAnim?i*50:0)).join('')}</div>
- <div class="bar2">${bar}</div>${modal}`;
- fitHand();keepMineVisible();setupDrag();flipAfter(flipPrev);persist();G.dealAnim=0;G.fresh=null;G.dropId=null;G.fly=null}
+ <div class="bar2">${bar}</div>${modal}`);
+ fitHand();fitTable();fitBubbles();keepMineVisible();setupDrag();flipAfter(flipPrev);persist();G.dealAnim=0;G.fresh=null;G.dropId=null;G.fly=null}
 
 function ordenar(m){G.flip=1;play('flip');G.hands[0].sort((a,b)=>!a.r-!b.r||(m=='p'?a.s-b.s||a.r-b.r:a.r-b.r||a.s-b.s));render()}
 let ME=(()=>{try{const r=localStorage.getItem('carioca:avatar'),v=+r;return r!==null&&v>=0&&v<ROSTER.length?v:7}catch(e){return 7}})();
