@@ -602,3 +602,9 @@ body{-webkit-text-size-adjust:100%;-webkit-user-select:none;user-select:none}
 #app[data-tight] .table .msgpill{padding:2px 10px;font-size:12px}
 #app[data-tight] .table .mz{min-height:0}
 #app[data-tight] .table{padding-top:4px}
+
+/* v0.5.2 · menú principal sin scroll (fitHome lo achica si no cabe) y texto de los botones bien situado */
+#home{overflow:hidden}
+.hbox{transform-origin:50% 0}
+#bCreate,#bJoin{padding:10px 22px;line-height:1.2;min-height:40px;display:inline-flex;align-items:center;justify-content:center;white-space:nowrap}
+.nb .chip{display:inline-flex;align-items:center;justify-content:center;line-height:1.2}

@@ -135,6 +135,11 @@ function fitBubbles(){const bs=document.querySelectorAll('.bubble');if(!bs.lengt
   if(dx){const m=Math.max(0,r.width/2-14);dx=Math.max(-m,Math.min(m,dx));b.style.setProperty('--bx',dx.toFixed(1)+'px')}
   const tb=document.querySelector('.table'),top=tb?tb.getBoundingClientRect().top+4:a.top;b.style.removeProperty('--by');
   if(r.top<top)b.style.setProperty('--by',(top-r.top).toFixed(1)+'px')})}
+// Menú principal: si no cabe en la pantalla, se achica (sin scroll) manteniéndose centrado
+function fitHome(){const h=document.getElementById('home'),b=h&&h.querySelector('.hbox');if(!b||!b.offsetHeight)return;b.style.transform='';
+ let cs=getComputedStyle(h),av=h.clientHeight-parseFloat(cs.paddingTop)-parseFloat(cs.paddingBottom),aw=h.clientWidth-parseFloat(cs.paddingLeft)-parseFloat(cs.paddingRight),
+ s=Math.min(1,av/b.offsetHeight,aw/b.offsetWidth);if(s>=.995)return;s=Math.max(.5,s);
+ const top=b.getBoundingClientRect().top,dy=(h.clientHeight-b.offsetHeight*s)/2-top;b.style.transform=`translateY(${dy.toFixed(1)}px) scale(${s.toFixed(3)})`}
 function keepMineVisible(){const t=document.querySelector('.table');if(t&&document.querySelector('.mine')&&t.scrollHeight>t.clientHeight+2)t.scrollTop=t.scrollHeight}
 function render(){
  const flipPrev=flipBefore();
@@ -270,8 +275,9 @@ function leaveOnline(msg){if(NET){NET.conn.close();NET=null}SESSION++;clearTimeo
 // ---- Pantalla de inicio ----
 const hasSave=()=>!!readSave();
 function initHome(){const home=document.getElementById('home');if(!home)return newGame();
+ if(typeof ResizeObserver=='function'&&home.querySelector){const hb=home.querySelector('.hbox');if(hb)new ResizeObserver(fitHome).observe(hb)}
  const saved=hasSave(),$=s=>home.querySelector(s),cont=$('#bCont'),nw=$('#bNew'),snd=$('#bSnd'),pk=$('#picks'),nameIn=$('#pName');
- let menuTimer=0;const showMenu=()=>{clearTimeout(menuTimer);home.classList.add('menu-on')};
+ let menuTimer=0;const showMenu=()=>{clearTimeout(menuTimer);home.classList.add('menu-on');fitHome()};
  const leave=()=>{home.classList.add('out');document.body.classList.add('ingame')}; // 'ingame' detiene las animaciones de fondo
  const nb=$('#nbots'),paintNb=()=>{nb.innerHTML=[1,2,3,4].map(k=>`<button class="chip ${NB==k?'on':''}" type="button" data-nb="${k}">${k}</button>`).join('')};
  nb.onclick=ev=>{const b=ev.target.closest('[data-nb]');if(!b)return;NB=+b.dataset.nb;try{localStorage.setItem('carioca:bots',NB)}catch(e){}unlock();play('click');paintNb()};
@@ -312,6 +318,6 @@ function abandon(){if(NET)return leaveRoom();SESSION++;stopTurn();try{localStora
 function newGame(){SESSION++;try{localStorage.removeItem(SAVE)}catch(e){}G={round:0,scores:[],sort:true,log:[]};setBots(pickBots(DIFF,ME,NB));setMe();start()}
 initHome();
 try{if(/[?&]debug\b/.test(location.search))window.__G=()=>G}catch(e){} // solo para pruebas: ?debug
-let rz=0;addEventListener('resize',()=>{clearTimeout(rz);rz=setTimeout(()=>{if(G.hands&&!G.showScore)render()},150)});
+let rz=0;addEventListener('resize',()=>{fitHome();clearTimeout(rz);rz=setTimeout(()=>{if(G.hands&&!G.showScore)render()},150)});
 if(navigator.serviceWorker)window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js'));
 ['gesturestart','gesturechange','gestureend'].forEach(t=>document.addEventListener(t,e=>e.preventDefault()));
