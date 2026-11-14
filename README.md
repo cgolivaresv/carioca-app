@@ -79,3 +79,10 @@ Cuentas, partidas en la nube y ranking.
 
 ## Validación
 `npm test` ejecuta las pruebas de reglas, bots y guardado. `npm run sim` compara el comportamiento estadístico de los bots; usa repartos aleatorios, así que sus resultados cambian entre ejecuciones. En la ronda 10 (escala real) es normal que muchas rondas terminen por agotamiento del mazo.
+
+## Versión de escritorio (Windows 11)
+Carioca también corre como aplicación de escritorio con Electron. Es una capa aparte en `desktop/`: no cambia la versión web ni la móvil.
+- `desktop/main.cjs`: ventana, barra de título propia y servidor de archivos local (`app://`). Presenta el origen oficial solo hacia el servidor en línea (ver `worker/index.js`); si cambia `SERVER_DEFAULT` o `BASE_ORIGINS`, actualiza las constantes de ese archivo.
+- `desktop/desktop.css`, `desktop/fx.js`: estilo de lujo, tipografía Cinzel (`desktop/fonts/`), polvo dorado, confeti, sonidos, avatares con vida, reacciones y pantalla de campeón.
+- Portable, sin instalador: `powershell -ExecutionPolicy Bypass -File .\build-win.ps1` genera `dist-desktop\win-unpacked\Carioca.exe` (hay que copiar la carpeta completa). Usa `rcedit` para el ícono porque `winCodeSign` necesita permiso de symlinks en Windows.
+- Para desarrollar: `npm install` y `npm run desktop`.

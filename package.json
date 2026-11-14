@@ -3,10 +3,30 @@
   "version": "0.5.3",
   "private": true,
   "type": "module",
+  "description": "Carioca - suite de lujo para Windows 11",
+  "author": "Carioca",
+  "main": "desktop/main.cjs",
   "engines": { "node": ">=20" },
   "scripts": {
     "test": "node --test",
     "sim": "node tools/sim.js",
-    "start": "node serve.js"
+    "start": "node serve.js",
+    "desktop": "electron .",
+    "dist": "electron-builder --win --dir --publish never"
+  },
+  "devDependencies": {
+    "electron": "^33.2.0",
+    "electron-builder": "^25.1.8"
+  },
+  "build": {
+    "appId": "cl.carioca.suite",
+    "productName": "Carioca",
+    "directories": { "output": "dist-desktop" },
+    "files": ["index.html", "style.css", "manifest.webmanifest", "src/**/*", "icons/**/*", "avatars/**/*", "desktop/**/*", "package.json"],
+    "win": {
+      "icon": "build/icon.ico",
+      "signAndEditExecutable": false,
+      "target": [{ "target": "dir", "arch": ["x64"] }]
+    }
   }
 }
