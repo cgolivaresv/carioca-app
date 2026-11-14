@@ -1,12 +1,47 @@
 {
   "name": "carioca",
-  "version": "0.5.3",
+  "version": "0.6.0",
   "private": true,
   "type": "module",
+  "main": "electron/main.cjs",
   "engines": { "node": ">=20" },
   "scripts": {
     "test": "node --test",
     "sim": "node tools/sim.js",
-    "start": "node serve.js"
+    "start": "node serve.js",
+    "app": "electron .",
+    "dist": "electron-builder --win",
+    "dist:portable": "electron-builder --win portable"
+  },
+  "devDependencies": {
+    "electron": "^33.0.0",
+    "electron-builder": "^25.1.8"
+  },
+  "build": {
+    "appId": "cl.cgolivaresv.carioca",
+    "productName": "Carioca",
+    "files": [
+      "index.html",
+      "style.css",
+      "manifest.webmanifest",
+      "sw.js",
+      "src/**/*",
+      "icons/**/*",
+      "avatars/**/*",
+      "electron/**/*"
+    ],
+    "win": {
+      "icon": "icons/icon-512.png",
+      "target": [
+        { "target": "nsis", "arch": ["x64"] },
+        { "target": "portable", "arch": ["x64"] }
+      ]
+    },
+    "nsis": {
+      "oneClick": true,
+      "perMachine": false,
+      "createDesktopShortcut": true,
+      "shortcutName": "Carioca"
+    }
   }
 }
