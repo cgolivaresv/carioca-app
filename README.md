@@ -14,6 +14,7 @@ Juego de carioca para 1 jugador contra 1 a 4 bots (mesas de 2 a 5 jugadores), co
 - `worker/`: servidor de Cloudflare (`core.js` = lógica de la sala, `index.js` = Worker y Durable Object). Config en `wrangler.toml`.
 - `src/roster.js`, `src/avatars.js`, `src/lines.js`: jugadores, avatares (con respaldo SVG) y frases de los bots.
 - `src/audio.js`, `src/joker.js`: sonidos y dibujo del comodín.
+- `fx.css`, `src/fx.js`: mejoras visuales y de movimiento (estilo de lujo desde 640 px de ancho, avatares con acciones, confeti, reacciones con emoji y pantalla de campeón). Solo observa el DOM: no toca el estado del juego.
 - `tools/sim.js`: simulación de partidas para medir el balance de los bots.
 - `sw.js`, `manifest.webmanifest`, `icons/`, `avatars/`: PWA e imágenes.
 - `tests/`: pruebas automáticas (`engine`, `bots`, `safe`, `mesa`, `game`).
@@ -51,6 +52,9 @@ La partida se guarda automáticamente en este dispositivo (también durante el t
 ## Ritmo de los bots
 El bot juega cuando termina de "pensar", y cuánto tarda depende de lo difícil que sea su decisión (`effort()` en `src/bots.js`): las jugadas rutinarias salen en 1,5 a 3 s, las que implican bajarse o dudar sobre el descarte tardan algo más, y 1 de cada 5 turnos, al azar, el bot "duda" y espera el máximo. El máximo se elige en el menú de puntaje (7, 10, 15 o 20 s; por defecto 7 s). Con 7 s la espera media ronda los 3,5 s.
 
+## Mejoras visuales (v0.5.4)
+Todo el movimiento nuevo cumple la regla de batería de abajo: en la versión web solo hay estilos estáticos y animaciones de un solo disparo (acciones de los retratos, confeti, reacciones, cierre de partida). Lo continuo vive en `desktop/`. El estilo de lujo se aplica desde 640 px de ancho; en celulares en vertical solo se suman los efectos finitos. Las reacciones con emoji son locales (solo contra bots); sincronizarlas en línea requeriría cambiar `worker/`.
+
 ## Consumo de batería (móvil)
 Al diseñar animaciones ten presente que, mientras algo se anima, el teléfono redibuja la pantalla completa en cada refresco (hasta 120 veces por segundo en un iPhone Pro). Por eso:
 - Nada de `filter: blur()`, `mix-blend-mode` ni animar `box-shadow`, `width` o `background` en bucle; anima solo `transform` y `opacity`.
@@ -83,6 +87,6 @@ Cuentas, partidas en la nube y ranking.
 ## Versión de escritorio (Windows 11)
 Carioca también corre como aplicación de escritorio con Electron. Es una capa aparte en `desktop/`: no cambia la versión web ni la móvil.
 - `desktop/main.cjs`: ventana, barra de título propia y servidor de archivos local (`app://`). Presenta el origen oficial solo hacia el servidor en línea (ver `worker/index.js`); si cambia `SERVER_DEFAULT` o `BASE_ORIGINS`, actualiza las constantes de ese archivo.
-- `desktop/desktop.css`, `desktop/fx.js`: estilo de lujo, tipografía Cinzel (`desktop/fonts/`), polvo dorado, confeti, sonidos, avatares con vida, reacciones y pantalla de campeón.
+- `desktop/desktop.css`, `desktop/fx.js`: solo lo propio de Windows: barra de título, tipografía Cinzel local (`desktop/fonts/`), cristal esmerilado, polvo dorado y las animaciones continuas (respiración, latidos). El resto del estilo es compartido (`fx.css` y `src/fx.js`).
 - Portable, sin instalador: `powershell -ExecutionPolicy Bypass -File .\build-win.ps1` genera `dist-desktop\win-unpacked\Carioca.exe` (hay que copiar la carpeta completa). Usa `rcedit` para el ícono porque `winCodeSign` necesita permiso de symlinks en Windows.
 - Para desarrollar: `npm install` y `npm run desktop`.

@@ -1,6 +1,6 @@
 {
   "name": "carioca",
-  "version": "0.5.3",
+  "version": "0.5.4",
   "private": true,
   "type": "module",
   "description": "Carioca - suite de lujo para Windows 11",
@@ -22,7 +22,7 @@
     "appId": "cl.carioca.suite",
     "productName": "Carioca",
     "directories": { "output": "dist-desktop" },
-    "files": ["index.html", "style.css", "manifest.webmanifest", "src/**/*", "icons/**/*", "avatars/**/*", "desktop/**/*", "package.json"],
+    "files": ["index.html", "style.css", "fx.css", "manifest.webmanifest", "src/**/*", "icons/**/*", "avatars/**/*", "desktop/**/*", "package.json"],
     "win": {
       "icon": "build/icon.ico",
       "signAndEditExecutable": false,
